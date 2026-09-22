@@ -93,7 +93,10 @@ export class WorkerClient {
         id: messageId,
         gameStartInfo: this.gameStartInfo,
         clientID: this.clientID,
-        cdnBase: getCdnBase(),
+        // The worker runs from a Blob URL, so a relative asset path like
+        // "/_assets/maps/..." cannot be resolved inside it. Without CDN_BASE,
+        // hand it this page's origin so map fetches still work.
+        cdnBase: getCdnBase() || window.location.origin,
       });
 
       setTimeout(() => {

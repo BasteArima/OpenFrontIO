@@ -7,8 +7,11 @@ FROM base AS build
 ENV HUSKY=0
 # Copy package files first for better caching
 COPY package*.json ./
+# --ignore-scripts: the test-only devDependency `canvas` has no reachable
+# prebuilt binary here and the image has no python/g++ to compile it.
+# esbuild is the only other package with an install script, and vite needs it.
 RUN --mount=type=cache,target=/root/.npm \
-    npm ci
+    npm ci --ignore-scripts && npm rebuild esbuild
 
 # Copy only what's needed for build
 COPY tsconfig.json ./
