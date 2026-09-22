@@ -147,6 +147,29 @@ describe("Attack focus", () => {
     expect(landAttack(attacker).focusTile()).toBeNull();
   });
 
+  test("water is never a focus, even when attacking unowned land", async () => {
+    const game = await setup("ocean_and_land", { infiniteTroops: true });
+    const info = new PlayerInfo("a", PlayerType.Human, null, "a_id");
+    game.addPlayer(info);
+    game.addExecution(new SpawnExecution("game_id", info, game.ref(0, 10)));
+    game.executeNextTick();
+    game.executeNextTick();
+    const player = game.player(info.id);
+    game.addExecution(new AttackExecution(50_000, player, null));
+    game.executeNextTick();
+
+    let water: TileRef | null = null;
+    game.map().forEachTile((t) => {
+      if (water === null && game.map().isWater(t)) water = t;
+    });
+    expect(water).not.toBeNull();
+    game.addExecution(
+      new AttackFocusExecution(player, landAttack(player).id(), water),
+    );
+    game.executeNextTick();
+    expect(landAttack(player).focusTile()).toBeNull();
+  });
+
   test("a player cannot steer someone else's attack", async () => {
     const { game, attacker, defender } = await newGame();
     game.addExecution(new AttackExecution(50_000, attacker, null));

@@ -32,7 +32,12 @@ export class AttackFocusExecution implements Execution {
       return;
     }
     // Only a point inside the land being attacked makes sense as a target.
-    if (mg.map().ownerID(this.tile) !== attack.target().smallID()) {
+    // Water is unowned too, but a focus there could never be taken (and so
+    // never clear) during an attack on terra nullius.
+    if (
+      !mg.map().isLand(this.tile) ||
+      mg.map().ownerID(this.tile) !== attack.target().smallID()
+    ) {
       return;
     }
     this.player.setAttackFocus(this.attackID, this.tile);

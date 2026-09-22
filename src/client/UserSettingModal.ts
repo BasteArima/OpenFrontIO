@@ -264,6 +264,7 @@ export class UserSettingModal extends BaseModal {
       keyPrefix: string;
     }> = [
       { actions: ["emojiMenuModifier", "altKey"], keyPrefix: "Alt" },
+      { actions: ["attackFocusModifier", "altKey"], keyPrefix: "Alt" },
       { actions: ["boxSelectWarships", "shiftKey"], keyPrefix: "Shift" },
     ];
 
@@ -1344,6 +1345,16 @@ export class UserSettingModal extends BaseModal {
         .defaultKey=${this.defaultKeybinds.buildMenuModifier}
         .value=${this.getKeyValue("buildMenuModifier")}
         .display=${this.getKeyChar("buildMenuModifier")}
+        @change=${this.handleKeybindChange}
+      ></setting-keybind>
+
+      <setting-keybind
+        action="attackFocusModifier"
+        label=${translateText("user_setting.attack_focus_modifier")}
+        description=${translateText("user_setting.attack_focus_modifier_desc")}
+        .defaultKey=${this.defaultKeybinds.attackFocusModifier}
+        .value=${this.getKeyValue("attackFocusModifier")}
+        .display=${this.getKeyChar("attackFocusModifier")}
         @change=${this.handleKeybindChange}
       ></setting-keybind>
 

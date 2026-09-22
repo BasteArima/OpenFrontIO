@@ -37,6 +37,7 @@ import { WorkerClient } from "../core/worker/WorkerClient";
 import { isDesktopShell } from "./DesktopShell";
 import { showInGameAlert } from "./InGameModal";
 import {
+  AttackFocusEvent,
   AutoUpgradeEvent,
   DoBoatAttackEvent,
   DoBreakAllianceEvent,
@@ -59,6 +60,7 @@ import {
   NewLobbyEvent,
   SendAllianceExtensionIntentEvent,
   SendAllianceRequestIntentEvent,
+  SendAttackFocusIntentEvent,
   SendAttackIntentEvent,
   SendBoatAttackIntentEvent,
   SendBreakAllianceIntentEvent,
@@ -962,6 +964,7 @@ export class ClientGameRunner {
     }, 20000);
 
     this.eventBus.on(MouseUpEvent, this.inputEvent.bind(this));
+    this.eventBus.on(AttackFocusEvent, this.attackFocusEvent.bind(this));
     this.eventBus.on(MouseMoveEvent, this.onMouseMove.bind(this));
     this.eventBus.on(AutoUpgradeEvent, this.autoUpgradeEvent.bind(this));
     this.eventBus.on(
@@ -1176,6 +1179,49 @@ export class ClientGameRunner {
     if (this.goToPlayerTimeout) {
       clearTimeout(this.goToPlayerTimeout);
       this.goToPlayerTimeout = null;
+    }
+  }
+
+  // Alt+click (attack focus modifier): on land of a player you are attacking,
+  // push that attack toward the tile; anywhere else, clear your focuses.
+  private attackFocusEvent(event: AttackFocusEvent) {
+    if (!this.isActive || this.gameView.inSpawnPhase()) {
+      return;
+    }
+    const cell = this.renderer.transformHandler.screenToWorldCoordinates(
+      event.x,
+      event.y,
+    );
+    if (!this.gameView.isValidCoord(cell.x, cell.y)) {
+      return;
+    }
+    const tile = this.gameView.ref(cell.x, cell.y);
+    if (!this.gameView.isLand(tile)) {
+      return;
+    }
+    if (this.myPlayer === null) {
+      if (!this.clientID) return;
+      const myPlayer = this.gameView.playerByClientID(this.clientID);
+      if (myPlayer === null) return;
+      this.myPlayer = myPlayer;
+    }
+    const attacks = this.myPlayer
+      .outgoingAttacks()
+      .filter((a) => !a.retreating);
+    const targetID = this.gameView.owner(tile).smallID();
+    // A landed boat attack on the same player is listed here too; the core
+    // ignores focus on those, so sending to every match reaches the land one.
+    const onTarget = attacks.filter((a) => a.targetID === targetID);
+    if (targetID !== this.myPlayer.smallID() && onTarget.length > 0) {
+      for (const a of onTarget) {
+        this.eventBus.emit(new SendAttackFocusIntentEvent(a.id, tile));
+      }
+      return;
+    }
+    for (const a of attacks) {
+      if (a.focusTile !== null && a.focusTile !== undefined) {
+        this.eventBus.emit(new SendAttackFocusIntentEvent(a.id, null));
+      }
     }
   }
 

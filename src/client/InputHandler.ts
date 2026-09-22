@@ -17,6 +17,15 @@ export class MouseUpEvent implements GameEvent {
   ) {}
 }
 
+// Attack-focus modifier + click: steer the land attack on that tile's owner
+// toward the tile (screen coordinates, like MouseUpEvent).
+export class AttackFocusEvent implements GameEvent {
+  constructor(
+    public readonly x: number,
+    public readonly y: number,
+  ) {}
+}
+
 export class MouseOverEvent implements GameEvent {
   constructor(
     public readonly x: number,
@@ -757,6 +766,7 @@ export class InputHandler {
             "ControlRight",
             this.keybinds.boxSelectWarships,
             this.keybinds.emojiMenuModifier,
+            this.keybinds.attackFocusModifier,
             this.keybinds.buildMenuModifier,
             this.keybinds.altKey,
           ].includes(e.code)
@@ -940,6 +950,13 @@ export class InputHandler {
     if (this.activeKeys.has(this.keybinds.buildMenuModifier)) {
       this.suppressNextTap = false;
       this.eventBus.emit(new ShowBuildMenuEvent(event.clientX, event.clientY));
+      return;
+    }
+    // Checked before the emoji modifier: an old saved keybind set may still
+    // have emojis on Alt too, and steering an attack is the time-critical one.
+    if (this.activeKeys.has(this.keybinds.attackFocusModifier)) {
+      this.suppressNextTap = false;
+      this.eventBus.emit(new AttackFocusEvent(event.x, event.y));
       return;
     }
     if (this.activeKeys.has(this.keybinds.emojiMenuModifier)) {

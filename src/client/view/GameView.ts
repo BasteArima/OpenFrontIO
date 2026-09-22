@@ -31,7 +31,10 @@ import { ClientID, GameID, Player, PlayerCosmetics } from "../../core/Schemas";
 import { formatPlayerDisplayName } from "../../core/Util";
 import { WorkerClient } from "../../core/worker/WorkerClient";
 import { computeAllianceClusters } from "../render/frame/derive/AllianceClusters";
-import { extractAttackRings } from "../render/frame/derive/AttackRings";
+import {
+  extractAttackRings,
+  extractFocusRings,
+} from "../render/frame/derive/AttackRings";
 import { extractNukeTelegraphs } from "../render/frame/derive/NukeTelegraphs";
 import { computePlayerStatus } from "../render/frame/derive/PlayerStatus";
 import { buildRelationMatrix } from "../render/frame/derive/RelationMatrix";
@@ -645,11 +648,17 @@ export class GameView implements GameMap {
       gu.tick,
     );
     f.attackRings = this._myPlayer
-      ? extractAttackRings(
-          this._unitStates,
-          this._map.width(),
-          this._myPlayer.smallID(),
-        )
+      ? [
+          ...extractAttackRings(
+            this._unitStates,
+            this._map.width(),
+            this._myPlayer.smallID(),
+          ),
+          ...extractFocusRings(
+            this._myPlayer.outgoingAttacks(),
+            this._map.width(),
+          ),
+        ]
       : [];
     f.structuresDirty = this._structuresDirty;
 

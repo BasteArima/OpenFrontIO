@@ -1033,6 +1033,7 @@
   },
   "help_modal": {
     "action_attack_altclick": "Attack (when left click is set to open menu)",
+    "action_attack_focus": "Push your attack toward this point (click your own land to clear)",
     "action_auto_upgrade": "Auto-upgrade nearest building",
     "action_build": "Open build menu",
     "action_coordinate_grid": "Toggle coordinate grid overlay",
@@ -2146,6 +2147,8 @@
     "ally_keybinds": "Ally Keybinds",
     "anonymous_names_desc": "Hide real player names with random ones on your screen.",
     "anonymous_names_label": "Hidden Names",
+    "attack_focus_modifier": "Attack Focus Modifier",
+    "attack_focus_modifier_desc": "Hold this key and click enemy land to push your attack there as a wedge. Click your own land to clear it.",
     "attack_keybinds": "Attack Keybinds",
     "attack_ratio_controls": "Attack Ratio Controls",
     "attack_ratio_desc": "What percentage of your troops to send in an attack (1–100%)",

@@ -355,6 +355,27 @@ export class HelpModal extends BaseModal {
                   <tr class="hover:bg-white/5 transition-colors">
                     <td class="py-3 ps-4 border-b border-white/5">
                       <div class="inline-flex items-center gap-2">
+                        ${this.renderKey(keybinds.attackFocusModifier)}
+                        <span class="text-white/40 font-bold">+</span>
+                        <div
+                          class="w-5 h-8 border border-white/40 rounded-full relative"
+                        >
+                          <div
+                            class="absolute top-0 left-0 w-1/2 h-1/2 bg-red-500/80 rounded-tl-full"
+                          ></div>
+                          <div
+                            class="w-0.5 h-1.5 bg-white/40 rounded-full absolute top-1.5 left-1/2 -translate-x-1/2"
+                          ></div>
+                        </div>
+                      </div>
+                    </td>
+                    <td class="py-3 border-b border-white/5 text-white/70">
+                      ${translateText("help_modal.action_attack_focus")}
+                    </td>
+                  </tr>
+                  <tr class="hover:bg-white/5 transition-colors">
+                    <td class="py-3 ps-4 border-b border-white/5">
+                      <div class="inline-flex items-center gap-2">
                         ${this.renderKey(keybinds.emojiMenuModifier)}
                         <span class="text-white/40 font-bold">+</span>
                         <div

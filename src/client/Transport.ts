@@ -163,6 +163,13 @@ export class CancelAttackIntentEvent implements GameEvent {
   constructor(public readonly attackID: string) {}
 }
 
+export class SendAttackFocusIntentEvent implements GameEvent {
+  constructor(
+    public readonly attackID: string,
+    public readonly tile: TileRef | null,
+  ) {}
+}
+
 export class CancelBoatIntentEvent implements GameEvent {
   constructor(public readonly unitID: number) {}
 }
@@ -325,6 +332,9 @@ export class Transport {
     this.subscribe(SendHashEvent, (e) => this.onSendHashEvent(e));
     this.subscribe(CancelAttackIntentEvent, (e) =>
       this.onCancelAttackIntentEvent(e),
+    );
+    this.subscribe(SendAttackFocusIntentEvent, (e) =>
+      this.onSendAttackFocusIntentEvent(e),
     );
     this.subscribe(CancelBoatIntentEvent, (e) =>
       this.onCancelBoatIntentEvent(e),
@@ -901,6 +911,14 @@ export class Transport {
     this.sendIntent({
       type: "cancel_attack",
       attackID: event.attackID,
+    });
+  }
+
+  private onSendAttackFocusIntentEvent(event: SendAttackFocusIntentEvent) {
+    this.sendIntent({
+      type: "attack_focus",
+      attackID: event.attackID,
+      tile: event.tile,
     });
   }
 

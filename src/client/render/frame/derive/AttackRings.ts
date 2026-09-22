@@ -20,3 +20,30 @@ export function extractAttackRings(
   }
   return rings;
 }
+
+/**
+ * Rings at the focus points of the local player's land attacks (attack_focus),
+ * drawn with the same dashed ring as transport targets. Keyed by target player
+ * rather than attack id so the ring doesn't blink when reinforcing replaces
+ * the attack; negative keys keep clear of transport unit ids.
+ */
+export function extractFocusRings(
+  attacks: readonly {
+    targetID: number;
+    retreating: boolean;
+    focusTile?: number | null;
+  }[],
+  mapW: number,
+): AttackRingInput[] {
+  const rings: AttackRingInput[] = [];
+  for (const a of attacks) {
+    const t = a.focusTile;
+    if (t === null || t === undefined || a.retreating) continue;
+    rings.push({
+      x: t % mapW,
+      y: (t - (t % mapW)) / mapW,
+      unitId: -1 - a.targetID,
+    });
+  }
+  return rings;
+}

@@ -46,7 +46,9 @@ export function getDefaultKeybinds(isMac: boolean): Record<string, string> {
     moveDown: "KeyS",
     moveRight: "KeyD",
     buildMenuModifier: isMac ? "MetaLeft" : "ControlLeft",
-    emojiMenuModifier: "AltLeft",
+    // Alt+click steers an attack (attack focus); emojis moved to Z+click.
+    attackFocusModifier: "AltLeft",
+    emojiMenuModifier: "KeyZ",
     boxSelectWarships: "ShiftLeft",
     shiftKey: "ShiftLeft",
     resetGfx: "KeyR",
