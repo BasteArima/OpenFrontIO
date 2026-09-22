@@ -54,10 +54,12 @@ export type Intent =
   | KickPlayerIntent
   | TogglePauseIntent
   | UpdateGameConfigIntent
-  | ToggleGameStartTimer;
+  | ToggleGameStartTimer
+  | AttackFocusIntent;
 
 export type AttackIntent = z.infer<typeof AttackIntentSchema>;
 export type CancelAttackIntent = z.infer<typeof CancelAttackIntentSchema>;
+export type AttackFocusIntent = z.infer<typeof AttackFocusIntentSchema>;
 export type SpawnIntent = z.infer<typeof SpawnIntentSchema>;
 export type BoatAttackIntent = z.infer<typeof BoatAttackIntentSchema>;
 export type EmbargoAllIntent = z.infer<typeof EmbargoAllIntentSchema>;
@@ -706,6 +708,16 @@ export const CancelAttackIntentSchema = z.object({
   attackID: z.string(),
 });
 
+// Point an existing land attack at a tile (null clears it): the front then
+// advances as a wedge toward that tile instead of evenly along the border.
+export const AttackFocusIntentSchema = z.object({
+  type: z.literal("attack_focus"),
+  attackID: z.string(),
+  // A TileRef indexes the typed-array terrain buffers, so it must be a
+  // non-negative integer.
+  tile: zb.uint().nullable(),
+});
+
 export const CancelBoatIntentSchema = z.object({
   type: z.literal("cancel_boat"),
   unitID: zb.uint(),
@@ -789,6 +801,9 @@ export const IntentSchema = z.discriminatedUnion("type", [
   TogglePauseIntentSchema,
   UpdateGameConfigIntentSchema,
   ToggleGameStartTimerIntentSchema,
+  // Appended so existing variants keep their wire tags (the binary codec
+  // numbers union variants by position).
+  AttackFocusIntentSchema,
 ]);
 
 // StampedIntent = Intent with server-stamped clientID (used in turns and execution)

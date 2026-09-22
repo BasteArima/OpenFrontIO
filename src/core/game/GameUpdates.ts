@@ -211,6 +211,8 @@ export interface AttackUpdate {
   troops: number;
   id: string;
   retreating: boolean;
+  // TileRef the attacker is pushing toward (attack_focus), or null.
+  focusTile?: number | null;
 }
 
 /**

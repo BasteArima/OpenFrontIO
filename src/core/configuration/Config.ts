@@ -291,6 +291,26 @@ export class Config {
     return 30 * 10; // 30 seconds
   }
 
+  // Focused attacks (attack_focus intent). Each front tile normally waits a
+  // random ~5-16 ticks for its turn; while focused, that wait is scaled from
+  // attackFocusTipDelay() for tiles as close to the focus as the front's tip,
+  // up to attackFocusFlankDelay() for tiles attackFocusWidth() or more tiles
+  // farther away. The tick budget is unchanged, so the tip gains exactly the
+  // tempo the flanks lose.
+  attackFocusTipDelay(): number {
+    return 0.35;
+  }
+  attackFocusFlankDelay(): number {
+    return 3;
+  }
+  attackFocusWidth(): number {
+    return 25;
+  }
+  // Tick cost multiplier per tile while focused: concentration is not free.
+  attackFocusSpeedCost(): number {
+    return 1.25;
+  }
+
   teamLandShareWinThresholdTenths(): number {
     return 7;
   }

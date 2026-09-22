@@ -8,6 +8,7 @@ export class AttackImpl implements Attack {
   private _borderSize = 0;
   public _retreating = false;
   public _retreated = false;
+  private _focusTile: TileRef | null = null;
 
   constructor(
     private _id: string,
@@ -21,6 +22,14 @@ export class AttackImpl implements Attack {
 
   sourceTile(): TileRef | null {
     return this._sourceTile;
+  }
+
+  focusTile(): TileRef | null {
+    return this._focusTile;
+  }
+
+  setFocusTile(tile: TileRef | null): void {
+    this._focusTile = tile;
   }
 
   target(): Player | TerraNullius {

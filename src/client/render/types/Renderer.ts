@@ -41,6 +41,7 @@ export interface AttackData {
   troops: number;
   id: string;
   retreating: boolean;
+  focusTile?: number | null;
 }
 
 export interface AllianceData {

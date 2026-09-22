@@ -68,6 +68,8 @@ const SAMPLE_INTENTS: StampedIntent[] = [
   { type: "attack", clientID: P1, targetID: P2, troops: 5123.75 },
   { type: "attack", clientID: P2, targetID: null, troops: null },
   { type: "cancel_attack", clientID: P1, attackID: "a1b2c3d4" },
+  { type: "attack_focus", clientID: P1, attackID: "a1b2c3d4", tile: 654321 },
+  { type: "attack_focus", clientID: P2, attackID: "a1b2c3d4", tile: null },
   { type: "boat", clientID: P2, troops: 100.5, dst: 998877 },
   { type: "cancel_boat", clientID: P2, unitID: 42 },
   { type: "allianceRequest", clientID: P1, recipient: P3 },

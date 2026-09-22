@@ -32,6 +32,15 @@ export class AttackExecution implements Execution {
   private map: GameMap;
 
   private attack: Attack | null = null;
+  // Focus the heap was last built for; tick() rebuilds when attack.focusTile()
+  // differs, so a new focus re-prioritises the whole front at once.
+  private appliedFocus: TileRef | null = null;
+  // Closest the front has come to appliedFocus (Manhattan tiles): the tip.
+  private focusTipDist = 0;
+  // While focused, tiles conquered this tick; their neighbours join the heap
+  // only after the tick, so the tip advances at most one tile per tick instead
+  // of chaining through the whole budget as a one-tile-wide spear.
+  private conqueredThisTick: TileRef[] = [];
 
   // Cached smallIDs for integer owner comparisons in hot loops.
   private ownerSmallID: number;
@@ -160,6 +169,10 @@ export class AttackExecution implements Execution {
         this.attack.sourceTile() === null
       ) {
         this.attack.setTroops(this.attack.troops() + outgoing.troops());
+        // Re-clicking to reinforce replaces the attack object; keep its focus.
+        if (this.attack.focusTile() === null) {
+          this.attack.setFocusTile(outgoing.focusTile());
+        }
         outgoing.delete();
       }
     }
@@ -201,6 +214,14 @@ export class AttackExecution implements Execution {
 
     this.toConquer.clear();
     this.attack.clearBorder();
+    const focus = this.appliedFocus;
+    if (focus !== null) {
+      let tip = Infinity;
+      this._owner.borderTiles().forEach((tile) => {
+        tip = Math.min(tip, this.map.manhattanDist(tile, focus));
+      });
+      this.focusTipDist = tip;
+    }
     // forEach over the dense storage — the values() generator showed up in long-game profiles
     this._owner.borderTiles().forEach((tile) => this.addNeighbors(tile));
   }
@@ -272,6 +293,19 @@ export class AttackExecution implements Execution {
       return;
     }
 
+    let focus = this.attack.focusTile();
+    if (focus !== null && this.map.ownerID(focus) !== this.targetSmallID) {
+      // The point was reached (or lost to someone else): back to a broad front.
+      this.attack.setFocusTile(null);
+      focus = null;
+    }
+    if (focus !== this.appliedFocus) {
+      this.appliedFocus = focus;
+      this.refreshToConquer();
+    }
+    const focusSpeedCost =
+      focus === null ? 1 : this.mg.config().attackFocusSpeedCost();
+
     const borderSize = this.attack.borderSize() + this.random.nextInt(0, 5);
     // Each tile consumes a fraction of the tick; conquer until it is spent.
     let tickBudget = 1;
@@ -280,10 +314,15 @@ export class AttackExecution implements Execution {
       if (troopCount < 1) {
         this.attack.delete();
         this.active = false;
+        this.conqueredThisTick.length = 0;
         return;
       }
 
       if (this.toConquer.size() === 0) {
+        if (this.conqueredThisTick.length > 0) {
+          // Only the deferred neighbours are left; they are added below.
+          break;
+        }
         this.refreshToConquer();
         this.retreat();
         return;
@@ -309,21 +348,36 @@ export class AttackExecution implements Execution {
       ) {
         continue;
       }
-      this.addNeighbors(tileToConquer);
+      if (focus === null) {
+        this.addNeighbors(tileToConquer);
+      } else {
+        this.conqueredThisTick.push(tileToConquer);
+      }
       const { attackerTroopLoss, defenderTroopLoss, tickFraction } = this.mg
         .config()
         .attackLogic(
           this.attackLogicInput(troopCount, tileToConquer, borderSize),
         );
-      tickBudget -= tickFraction;
+      tickBudget -= tickFraction * focusSpeedCost;
       troopCount -= attackerTroopLoss;
       this.attack.setTroops(troopCount);
       if (targetPlayer) {
         targetPlayer.removeTroops(defenderTroopLoss);
       }
       this._owner.conquer(tileToConquer);
+      if (this.appliedFocus !== null) {
+        this.focusTipDist = Math.min(
+          this.focusTipDist,
+          this.map.manhattanDist(tileToConquer, this.appliedFocus),
+        );
+      }
       this.handleDeadDefender();
     }
+
+    for (const tile of this.conqueredThisTick) {
+      this.addNeighbors(tile);
+    }
+    this.conqueredThisTick.length = 0;
   }
 
   private attackLogicInput(
@@ -421,12 +475,27 @@ export class AttackExecution implements Execution {
           break;
       }
 
-      const priority =
-        (this.random.nextInt(0, 7) + 10) * (1 - numOwnedByMe * 0.5 + mag / 2) +
-        tickNow;
+      let delay =
+        (this.random.nextInt(0, 7) + 10) * (1 - numOwnedByMe * 0.5 + mag / 2);
+      if (this.appliedFocus !== null && delay > 0) {
+        delay *= this.focusDelayScale(neighbor, this.appliedFocus);
+      }
+      const priority = delay + tickNow;
 
       this.toConquer.enqueue(neighbor, priority);
     }
+  }
+
+  // Scales a front tile's wait: short at the tip of the wedge, long on the
+  // flanks. Scaling the wait (not adding to the priority) matters: an additive
+  // bonus lets the tip chain through dozens of tiles within one tick, which
+  // makes a one-tile-wide spear instead of a wedge.
+  private focusDelayScale(tile: TileRef, focus: TileRef): number {
+    const config = this.mg.config();
+    const behindTip = this.map.manhattanDist(tile, focus) - this.focusTipDist;
+    const t = Math.min(1, Math.max(0, behindTip / config.attackFocusWidth()));
+    const tip = config.attackFocusTipDelay();
+    return tip + (config.attackFocusFlankDelay() - tip) * t;
   }
 
   private handleDeadDefender() {

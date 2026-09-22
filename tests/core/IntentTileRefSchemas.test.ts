@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  AttackFocusIntentSchema,
   AttackIntentSchema,
   BoatAttackIntentSchema,
   BuildUnitIntentSchema,
@@ -37,6 +38,11 @@ const tileRefCases = [
     name: "move_warship",
     schema: MoveWarshipIntentSchema,
     build: (tile: number) => ({ type: "move_warship", unitIds: [1], tile }),
+  },
+  {
+    name: "attack_focus",
+    schema: AttackFocusIntentSchema,
+    build: (tile: number) => ({ type: "attack_focus", attackID: "a1", tile }),
   },
 ];
 

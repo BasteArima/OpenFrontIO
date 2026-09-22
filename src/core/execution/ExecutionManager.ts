@@ -7,6 +7,7 @@ import { AllianceRejectExecution } from "./alliance/AllianceRejectExecution";
 import { AllianceRequestExecution } from "./alliance/AllianceRequestExecution";
 import { BreakAllianceExecution } from "./alliance/BreakAllianceExecution";
 import { AttackExecution } from "./AttackExecution";
+import { AttackFocusExecution } from "./AttackFocusExecution";
 import { BoatRetreatExecution } from "./BoatRetreatExecution";
 import { ConstructionExecution } from "./ConstructionExecution";
 import { DeleteUnitExecution } from "./DeleteUnitExecution";
@@ -67,6 +68,8 @@ export class Executor {
       }
       case "cancel_attack":
         return new RetreatExecution(player, intent.attackID);
+      case "attack_focus":
+        return new AttackFocusExecution(player, intent.attackID, intent.tile);
       case "cancel_boat":
         return new BoatRetreatExecution(player, intent.unitID);
       case "move_warship":

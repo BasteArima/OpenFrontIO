@@ -243,7 +243,7 @@ function stringSetEqual(a?: Set<string>, b?: Set<string>): boolean {
 
 /**
  * Attack-array equality ignoring troop counts: same attacks, same order,
- * same retreating flags. When this holds, only troop counts can differ, and
+ * same retreating flags and focus tiles. When this holds, only troop counts can differ, and
  * those travel as packed quads (packAttackTroopDeltas) addressed by index —
  * which stays valid precisely because any membership/order change makes
  * this false and resends the whole array.
@@ -262,7 +262,8 @@ function attackArrayMembershipEqual(
       x.attackerID !== y.attackerID ||
       x.targetID !== y.targetID ||
       x.id !== y.id ||
-      x.retreating !== y.retreating
+      x.retreating !== y.retreating ||
+      x.focusTile !== y.focusTile
     ) {
       return false;
     }

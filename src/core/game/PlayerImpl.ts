@@ -333,6 +333,7 @@ export class PlayerImpl implements Player {
               troops: a.troops(),
               id: a.id(),
               retreating: a.retreating(),
+              focusTile: a.focusTile(),
             } satisfies AttackUpdate;
           });
 
@@ -347,6 +348,7 @@ export class PlayerImpl implements Player {
             troops: a.troops(),
             id: a.id(),
             retreating: a.retreating(),
+            focusTile: a.focusTile(),
           } satisfies AttackUpdate;
         });
       }
@@ -700,6 +702,15 @@ export class PlayerImpl implements Player {
       return;
     }
     attack.executeRetreat();
+  }
+  // Only this player's own outgoing attacks are searched, which is what keeps
+  // one player from steering another's attack.
+  setAttackFocus(id: string, tile: TileRef | null): void {
+    const attack = this._outgoingAttacks.find((attack) => attack.id() === id);
+    if (!attack) {
+      return;
+    }
+    attack.setFocusTile(tile);
   }
   relinquish(tile: TileRef) {
     if (this.mg.owner(tile) !== this) {

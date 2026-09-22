@@ -397,6 +397,10 @@ export interface Attack {
   delete(): void;
   // The tile the attack originated from, mostly used for boat attacks.
   sourceTile(): TileRef | null;
+  // Optional point the attack pushes toward, set by the attacker (attack_focus
+  // intent). Tiles near it are conquered first, so the front becomes a wedge.
+  focusTile(): TileRef | null;
+  setFocusTile(tile: TileRef | null): void;
   addBorderTile(tile: TileRef): void;
   removeBorderTile(tile: TileRef): void;
   clearBorder(): void;
@@ -767,6 +771,7 @@ export interface Player {
   incomingAttacks(): Attack[];
   orderRetreat(attackID: string): void;
   executeRetreat(attackID: string): void;
+  setAttackFocus(attackID: string, tile: TileRef | null): void;
 
   // Misc
   toUpdate(
