@@ -47,6 +47,7 @@ import { clientPlatform } from "./ClientPlatform";
 import { isDesktopShell } from "./DesktopShell";
 import { showInGameConfirm } from "./InGameModal";
 import { LocalServer } from "./LocalServer";
+import { describeSocketClose } from "./SocketClose";
 import { homeHref, translateText } from "./Utils";
 import { PlayerView } from "./view";
 
@@ -458,14 +459,17 @@ export class Transport {
       this.handleConnectionRefused(CloseReason.Unknown);
       return;
     }
-    this.socket = new WebSocket(
+    const socket = new WebSocket(
       `${ClientEnv.gameWsBase(this.lobbyConfig.gameID)}/${workerPath}`,
     );
+    this.socket = socket;
+    let openedAt: number | null = null;
     // Every frame is a zbin payload; without this they would arrive as Blobs.
     this.socket.binaryType = "arraybuffer";
     this.onconnect = onconnect;
     this.onmessage = onmessage;
     this.socket.onopen = () => {
+      openedAt = Date.now();
       console.log("Connected to game server!");
       if (this.socket === null) {
         console.error("socket is null");
@@ -515,8 +519,7 @@ export class Transport {
         return;
       }
     };
-    this.socket.onerror = (err) => {
-      console.error("Socket encountered error: ", err, "Closing socket");
+    this.socket.onerror = () => {
       if (this.socket === null) {
         return;
       }
@@ -524,9 +527,15 @@ export class Transport {
     };
     this.socket.onclose = (event: CloseEvent) => {
       this.isSessionReady = false;
-      console.log(
-        `WebSocket closed. Code: ${event.code}, Reason: ${event.reason}`,
-      );
+      const detail = describeSocketClose(socket.url, event, openedAt);
+      if (event.code === CloseCode.Normal) {
+        console.log(`Game socket ${detail}`);
+      } else {
+        const next = isTerminalClose(event.code)
+          ? "not retrying"
+          : "reconnecting";
+        console.warn(`Game socket ${detail}; ${next}`);
+      }
       if (isTerminalClose(event.code)) {
         if (event.code === CloseCode.Normal) {
           // The server ended the session (game over, kick): nothing to say
@@ -539,7 +548,6 @@ export class Transport {
         }
         return;
       }
-      console.log(`received error code ${event.code}, reconnecting`);
       this.scheduleReconnect();
     };
   }

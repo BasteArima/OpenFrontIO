@@ -17,7 +17,6 @@ import { GameEnv } from "../core/configuration/Config";
 import { UserSettings } from "../core/game/UserSettings";
 import "./AccountModal";
 import "./AccountSettingsModal";
-import { syncAchievements } from "./AchievementSignal";
 import { adGatekeeper } from "./AdGatekeeper";
 import { loadAdmiral, onAdmiralMeasured } from "./Admiral";
 import { getUserMe, invalidateUserMe } from "./Api";
@@ -127,6 +126,7 @@ import "./SteamLinkModal";
 import { SteamLinkModal } from "./SteamLinkModal";
 import { StoreModal } from "./Store";
 import "./SubscriptionModal";
+import { initTelemetry } from "./Telemetry";
 import { TokenLoginModal } from "./TokenLoginModal";
 import {
   SendKickPlayerIntentEvent,
@@ -344,6 +344,9 @@ class Client {
     capturePagePin();
 
     flushReloadToast();
+
+    // Stale key still in existing players' storage; nothing reads it.
+    localStorage.removeItem("achievements.pushed");
 
     // A store referral banner / account "copy link" hands out `/c/<code>`.
     // There's nothing to open here yet -- the code only does anything once
@@ -853,30 +856,10 @@ class Client {
     // it was fetched under is still current.
     let authGeneration = 0;
 
-    // Catches anything the post-game poll missed: a player who quit before the
-    // game was archived, an earlier failed push, or a player who has just
-    // linked a platform account and has a whole history to hand over.
-    //
-    // Hung off every established session rather than off boot alone, because
-    // a session can arrive later than boot: recovered from the status bar, or
-    // signed into mid-session through the link modal -- the very case that
-    // last bullet names. Keyed by player id so it runs once per session and
-    // not again on each later profile refresh, while still re-running when a
-    // different account signs in (the record is per-player too).
-    let achievementsSyncedFor: string | null = null;
-    const reconcileAchievements = (userMeResponse: UserMeResponse | false) => {
-      if (userMeResponse === false) return;
-      const playerId = userMeResponse.player.publicId;
-      if (achievementsSyncedFor === playerId) return;
-      achievementsSyncedFor = playerId;
-      void syncAchievements();
-    };
-
     const applyUserMe =
       (generation: number) => (userMeResponse: UserMeResponse | false) => {
         if (generation !== authGeneration) return;
         void onUserMe(userMeResponse);
-        reconcileAchievements(userMeResponse);
       };
 
     // A session dropped in the background — an expired refresh token, a 401 on
@@ -906,7 +889,6 @@ class Client {
       applyUserMe(initialAuthGeneration)(false);
     } else {
       // JWT appears valid: fetch the profile and apply it if still current.
-      // applyUserMe carries the achievements reconcile.
       getUserMe().then(applyUserMe(initialAuthGeneration));
     }
 
@@ -1912,6 +1894,10 @@ const hideCrazyGamesElements = () => {
 
 // Initialize the client when the DOM is loaded
 const bootstrap = () => {
+  // First, so the error hooks are in place for everything below. No-op
+  // without a collector URL (see Telemetry.ts); never awaited.
+  void initTelemetry();
+
   // Prevent Safari's page-level pinch-zoom, which ignores `user-scalable=no`
   // on iOS and can softlock the HUD. See issue #2330.
   installSafariPinchZoomBlocker();
