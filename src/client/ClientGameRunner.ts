@@ -58,6 +58,7 @@ import { reportGameError } from "./Telemetry";
 import { terrainMapFileLoader } from "./TerrainMapFileLoader";
 import { GoToPlayerEvent } from "./TransformHandler";
 import {
+  BuildUnitIntentEvent,
   MoveWarshipIntentEvent,
   NewLobbyEvent,
   SendAllianceExtensionIntentEvent,
@@ -67,6 +68,7 @@ import {
   SendBoatAttackIntentEvent,
   SendBreakAllianceIntentEvent,
   SendHashEvent,
+  SendParadropIntentEvent,
   SendSpawnIntentEvent,
   SendUpgradeStructureIntentEvent,
   Transport,
@@ -974,6 +976,7 @@ export class ClientGameRunner {
 
     this.eventBus.on(MouseUpEvent, this.inputEvent.bind(this));
     this.eventBus.on(AttackFocusEvent, this.attackFocusEvent.bind(this));
+    this.eventBus.on(BuildUnitIntentEvent, this.paradropEvent.bind(this));
     this.eventBus.on(MouseMoveEvent, this.onMouseMove.bind(this));
     this.eventBus.on(AutoUpgradeEvent, this.autoUpgradeEvent.bind(this));
     this.eventBus.on(
@@ -1197,6 +1200,27 @@ export class ClientGameRunner {
       clearTimeout(this.goToPlayerTimeout);
       this.goToPlayerTimeout = null;
     }
+  }
+
+  // Picking "paratroopers" from a build/radial menu or placing its ghost
+  // arrives as a build of UnitType.TransportPlane; the sortie takes the
+  // attack-ratio share of troops (the core caps it at a quarter).
+  private paradropEvent(event: BuildUnitIntentEvent) {
+    if (event.unit !== UnitType.TransportPlane || !this.isActive) {
+      return;
+    }
+    if (this.myPlayer === null) {
+      if (!this.clientID) return;
+      const myPlayer = this.gameView.playerByClientID(this.clientID);
+      if (myPlayer === null) return;
+      this.myPlayer = myPlayer;
+    }
+    this.eventBus.emit(
+      new SendParadropIntentEvent(
+        event.tile,
+        this.myPlayer.troops() * this.renderer.uiState.attackRatio,
+      ),
+    );
   }
 
   // Alt+click (attack focus modifier): on land of a player you are attacking,

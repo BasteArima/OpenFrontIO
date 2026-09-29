@@ -27,6 +27,8 @@ import { UIState } from "../../UIState";
 import { renderNumber } from "../../Utils";
 import { GameView } from "../../view";
 const warshipIcon = assetUrl("images/BattleshipIconWhite.svg");
+const airportIcon = assetUrl("images/AirportIconWhite.svg");
+const paratroopersIcon = assetUrl("images/ParatroopersIconWhite.svg");
 const cityIcon = assetUrl("images/CityIconWhite.svg");
 const factoryIcon = assetUrl("images/FactoryIconWhite.svg");
 const goldCoinIcon = assetUrl("images/GoldCoinIcon.svg");
@@ -77,6 +79,13 @@ export const buildTable: BuildItemDisplay[][] = [
       countable: true,
     },
     {
+      unitType: UnitType.TransportPlane,
+      icon: paratroopersIcon,
+      description: "build_menu.desc.transport_plane",
+      key: "unit_type.transport_plane",
+      countable: false,
+    },
+    {
       unitType: UnitType.Port,
       icon: portIcon,
       description: "build_menu.desc.port",
@@ -116,6 +125,13 @@ export const buildTable: BuildItemDisplay[][] = [
       icon: factoryIcon,
       description: "build_menu.desc.factory",
       key: "unit_type.factory",
+      countable: true,
+    },
+    {
+      unitType: UnitType.Airport,
+      icon: airportIcon,
+      description: "build_menu.desc.airport",
+      key: "unit_type.airport",
       countable: true,
     },
   ],

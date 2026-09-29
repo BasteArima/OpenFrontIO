@@ -26,6 +26,7 @@
  *   Col 9: Train Engine (5×5)
  *   Col 10: Train Carriage (5×5)
  *   Col 11: Train Carriage Loaded (5×5)
+ *   Col 12: Transport Plane (13×13, paratroopers)
  *
  * Data flow:
  *   FrameSnapshot.units → filter by typeToAtlasIdx → instance VBO → GPU
@@ -47,6 +48,7 @@ import {
   UT_TRADE_SHIP,
   UT_TRAIN,
   UT_TRANSPORT,
+  UT_TRANSPORT_PLANE,
   UT_WARSHIP,
 } from "../../types";
 import { DynamicInstanceBuffer } from "../DynamicBuffer";
@@ -85,6 +87,7 @@ const UNIT_ORDER = [
   "TrainEngine",
   "TrainCarriage",
   "TrainCarriageLoaded",
+  UT_TRANSPORT_PLANE,
 ] as const;
 
 const ATLAS_COLS = UNIT_ORDER.length;
@@ -141,6 +144,7 @@ const FLICKER_TYPES: ReadonlySet<string> = new Set([
 /** Missile/projectile types — rendered on top of structures in the layer order.
  *  Ground/sea units (boats, trains) render below structures. */
 const MISSILE_TYPES: ReadonlySet<string> = new Set([
+  UT_TRANSPORT_PLANE,
   UT_ATOM_BOMB,
   UT_HYDROGEN_BOMB,
   UT_MIRV,

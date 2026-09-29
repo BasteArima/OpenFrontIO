@@ -164,6 +164,14 @@ export class CancelAttackIntentEvent implements GameEvent {
   constructor(public readonly attackID: string) {}
 }
 
+// Paratroopers: the troops fly from the nearest ready airport to `dst`.
+export class SendParadropIntentEvent implements GameEvent {
+  constructor(
+    public readonly dst: TileRef,
+    public readonly troops: number,
+  ) {}
+}
+
 export class SendAttackFocusIntentEvent implements GameEvent {
   constructor(
     public readonly attackID: string,
@@ -336,6 +344,9 @@ export class Transport {
     );
     this.subscribe(SendAttackFocusIntentEvent, (e) =>
       this.onSendAttackFocusIntentEvent(e),
+    );
+    this.subscribe(SendParadropIntentEvent, (e) =>
+      this.onSendParadropIntentEvent(e),
     );
     this.subscribe(CancelBoatIntentEvent, (e) =>
       this.onCancelBoatIntentEvent(e),
@@ -841,6 +852,11 @@ export class Transport {
   }
 
   private onBuildUnitIntent(event: BuildUnitIntentEvent) {
+    // A paratrooper sortie carries troops, so it is not a plain build:
+    // ClientGameRunner turns it into a SendParadropIntentEvent.
+    if (event.unit === UnitType.TransportPlane) {
+      return;
+    }
     this.sendIntent({
       type: "build_unit",
       unit: event.unit,
@@ -919,6 +935,14 @@ export class Transport {
     this.sendIntent({
       type: "cancel_attack",
       attackID: event.attackID,
+    });
+  }
+
+  private onSendParadropIntentEvent(event: SendParadropIntentEvent) {
+    this.sendIntent({
+      type: "paradrop",
+      dst: event.dst,
+      troops: event.troops,
     });
   }
 

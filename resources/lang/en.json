@@ -157,6 +157,7 @@
   },
   "build_menu": {
     "desc": {
+      "airport": "Launches paratrooper planes within 300 tiles. One plane per level, 30 s cooldown.",
       "atom_bomb": "Small explosion",
       "city": "Increases max population",
       "defense_post": "Increases defenses of nearby borders",
@@ -166,6 +167,7 @@
       "missile_silo": "Used to launch nukes",
       "port": "Sends trade ships to generate gold",
       "sam_launcher": "Defends against incoming nukes",
+      "transport_plane": "Drop troops (attack ratio, max 25%) deep in enemy land from the nearest airport. SAMs can shoot the plane down.",
       "warship": "Captures trade ships, destroys ships and boats"
     },
     "not_enough_money": "Not enough money",
@@ -765,6 +767,11 @@
     "ignore": "Ignore",
     "missile_intercepted": "SAM intercepted {unit}",
     "no_boats_available": "No boats available, max {max}",
+    "paradrop_linked_up": "Paratroopers linked up with your lines: {troops} troops back",
+    "paradrop_lost": "Paratroopers cut off and lost: {troops} troops",
+    "paradrop_shot_down": "Your paratrooper plane was shot down by {name}, {troops} troops lost",
+    "paradrop_shot_down_enemy": "Your air defense shot down a plane from {name} carrying {troops} troops",
+    "paradrop_unavailable": "Paratroopers can't fly there: no ready airport in range",
     "received_gold_from_captured_ship": "Received {gold} gold from ship captured from {name}",
     "received_gold_from_conquest": "Conquered {name}, received {gold} gold",
     "received_gold_from_player": "Received {gold} gold from {name}",
@@ -2132,6 +2139,7 @@
     "title": "Tutorial"
   },
   "unit_type": {
+    "airport": "Airport",
     "atom_bomb": "Atom Bomb",
     "boat": "Boat",
     "city": "City",
@@ -2142,6 +2150,7 @@
     "missile_silo": "Missile Silo",
     "port": "Port",
     "sam_launcher": "SAM Launcher",
+    "transport_plane": "Paratroopers",
     "warship": "Warship"
   },
   "update_available": {

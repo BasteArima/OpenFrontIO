@@ -462,6 +462,12 @@ export class BuildPreviewController implements Controller {
       case UnitType.DefensePost:
         rangeRadius = this.game.config().defensePostRange();
         break;
+      case UnitType.Airport:
+        rangeRadius = this.game.config().paradropRange();
+        break;
+      case UnitType.TransportPlane:
+        rangeRadius = this.game.config().paradropDropRadius();
+        break;
     }
     let radiusTileX = this.game.x(tileRef);
     let radiusTileY = this.game.y(tileRef);

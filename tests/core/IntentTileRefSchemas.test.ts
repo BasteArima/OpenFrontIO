@@ -9,6 +9,7 @@ import {
   DonateGoldIntentSchema,
   DonateTroopIntentSchema,
   MoveWarshipIntentSchema,
+  ParadropIntentSchema,
   SpawnIntentSchema,
   UpgradeStructureIntentSchema,
 } from "../../src/core/Schemas";
@@ -43,6 +44,11 @@ const tileRefCases = [
     name: "attack_focus",
     schema: AttackFocusIntentSchema,
     build: (tile: number) => ({ type: "attack_focus", attackID: "a1", tile }),
+  },
+  {
+    name: "paradrop",
+    schema: ParadropIntentSchema,
+    build: (dst: number) => ({ type: "paradrop", troops: 1, dst }),
   },
 ];
 
