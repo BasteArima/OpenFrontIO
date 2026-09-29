@@ -1,6 +1,8 @@
 import { assetUrl } from "../../core/AssetUrls";
 
 export const warshipIcon = assetUrl("images/BattleshipIconWhite.svg");
+export const airportIcon = assetUrl("images/AirportIconWhite.svg");
+export const paratroopersIcon = assetUrl("images/ParatroopersIconWhite.svg");
 export const cityIcon = assetUrl("images/CityIconWhite.svg");
 export const factoryIcon = assetUrl("images/FactoryIconWhite.svg");
 export const goldCoinIcon = assetUrl("images/GoldCoinIcon.svg");

@@ -30,6 +30,9 @@ export function getDefaultKeybinds(isMac: boolean): Record<string, string> {
     buildAtomBomb: "Digit8",
     buildHydrogenBomb: "Digit9",
     buildMIRV: "Digit0",
+    // Paratroopers. Not "-"/"=": holding those zooms the map (InputHandler).
+    buildAirport: "KeyH",
+    buildParatroopers: "KeyJ",
     attackRatioDown: "KeyT",
     attackRatioUp: "KeyY",
     boatAttack: "KeyB",
