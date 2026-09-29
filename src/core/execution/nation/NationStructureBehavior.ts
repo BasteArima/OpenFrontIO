@@ -17,7 +17,11 @@ import { assertNever } from "../../Util";
 import { ConstructionExecution } from "../ConstructionExecution";
 import { UpgradeStructureExecution } from "../UpgradeStructureExecution";
 import { nearestTileDist, nearestTileDistCapped } from "../Util";
-import { randTerritoryTileArray } from "./NationUtils";
+import {
+  everyNth,
+  PARADROP_TARGET_STRUCTURES,
+  randTerritoryTileArray,
+} from "./NationUtils";
 
 /**
  * Configuration for how many structures of each type a nation should build
@@ -39,6 +43,32 @@ const SAM_RATIO_BY_DIFFICULTY: Record<Difficulty, number> = {
 };
 
 /**
+ * Airport ratio per city, keyed by difficulty. Only Hard / Impossible nations
+ * use paratroopers (NationParadropBehavior); the airport comes once the
+ * economy stands (Hard: 7 cities, Impossible: 5, a second level at 10).
+ */
+const AIRPORT_RATIO_BY_DIFFICULTY: Record<Difficulty, number> = {
+  [Difficulty.Easy]: 0,
+  [Difficulty.Medium]: 0,
+  [Difficulty.Hard]: 0.15,
+  [Difficulty.Impossible]: 0.2,
+};
+
+/** Airport levels (new airports or upgrades) a nation owns at most, keyed by difficulty */
+const MAX_AIRPORTS_BY_DIFFICULTY: Record<Difficulty, number> = {
+  [Difficulty.Easy]: 0,
+  [Difficulty.Medium]: 0,
+  [Difficulty.Hard]: 1,
+  [Difficulty.Impossible]: 2,
+};
+
+/** Max number of own front tiles (facing enemies) used to score airport placement */
+const AIRPORT_FRONT_SAMPLE_SIZE = 64;
+
+/** Max number of enemy structures used to score airport placement */
+const AIRPORT_ENEMY_STRUCTURE_SAMPLE_SIZE = 64;
+
+/**
  * Returns structure ratios relative to city count, adjusted by difficulty.
  * Cities are always prioritized and built first.
  * When cities are disabled, we use TILES_PER_CITY_EQUIVALENT. That's not ideal, nations won't properly upgrade structures, but it's better than nothing. Probably 99.9% of players won't disable cities anyway.
@@ -58,6 +88,10 @@ function getStructureRatios(
     },
     [UnitType.MissileSilo]: {
       ratioPerCity: 0.2,
+      perceivedCostIncreasePerOwned: 1,
+    },
+    [UnitType.Airport]: {
+      ratioPerCity: AIRPORT_RATIO_BY_DIFFICULTY[difficulty],
       perceivedCostIncreasePerOwned: 1,
     },
   };
@@ -495,6 +529,7 @@ export class NationStructureBehavior {
       UnitType.Factory,
       UnitType.SAMLauncher,
       UnitType.MissileSilo,
+      UnitType.Airport,
     ];
 
     const nukesEnabled =
@@ -502,9 +537,23 @@ export class NationStructureBehavior {
       !config.isUnitDisabled(UnitType.HydrogenBomb) ||
       !config.isUnitDisabled(UnitType.MIRV);
 
+    // Set when a SAM or silo is due but couldn't be placed (usually: not
+    // enough gold yet). The airport then waits, so it never eats the gold
+    // saved up for nuke defense / offense.
+    let nukeStructurePending = false;
+
     for (const structureType of buildOrder) {
       // Skip disabled structure types
       if (config.isUnitDisabled(structureType)) {
+        continue;
+      }
+
+      // An airport is useless without transport planes, and waits for
+      // SAMs / silos that are due
+      if (
+        structureType === UnitType.Airport &&
+        (config.isUnitDisabled(UnitType.TransportPlane) || nukeStructurePending)
+      ) {
         continue;
       }
 
@@ -532,6 +581,12 @@ export class NationStructureBehavior {
       ) {
         if (this.maybeSpawnStructure(structureType)) {
           return true;
+        }
+        if (
+          structureType === UnitType.SAMLauncher ||
+          structureType === UnitType.MissileSilo
+        ) {
+          nukeStructurePending = true;
         }
       }
     }
@@ -598,9 +653,42 @@ export class NationStructureBehavior {
       ratio = FIRST_MISSILE_SILO_RATIO;
     }
 
-    const targetCount = Math.floor(cityCount * ratio);
+    // Hard cap on airport levels (paratroopers are Hard / Impossible only)
+    if (
+      type === UnitType.Airport &&
+      owned >= MAX_AIRPORTS_BY_DIFFICULTY[difficulty]
+    ) {
+      return false;
+    }
 
-    return owned < targetCount;
+    const targetCount = Math.floor(cityCount * ratio);
+    if (owned >= targetCount) {
+      return false;
+    }
+
+    // Airports are for dropping paratroopers on enemies: without a hostile
+    // neighbor there is nobody to drop on.
+    if (type === UnitType.Airport) {
+      return this.paradropEnemies().length > 0;
+    }
+
+    return true;
+  }
+
+  /**
+   * Nearby players a nation would drop paratroopers on: attackable,
+   * non-friendly (no allies / teammates) and not tribes (bots).
+   */
+  private paradropEnemies(): Player[] {
+    const player = this.player;
+    const enemies: Player[] = [];
+    for (const n of player.nearby()) {
+      if (!n.isPlayer()) continue;
+      if (n.type() === PlayerType.Bot) continue;
+      if (player.isFriendly(n) || !player.canAttackPlayer(n)) continue;
+      enemies.push(n);
+    }
+    return enemies;
   }
 
   private cost(type: UnitType): Gold {
@@ -650,7 +738,11 @@ export class NationStructureBehavior {
    * Once the nation can afford its target stockpile, stop inflating costs.
    */
   private getPerceivedCost(type: UnitType): Gold {
-    const realCost = this.cost(type);
+    // An airport is only worth it with gold left for the first sortie.
+    const realCost =
+      type === UnitType.Airport
+        ? this.cost(type) + this.cost(UnitType.TransportPlane)
+        : this.cost(type);
 
     const saveUpTarget = this.getSaveUpTarget();
     if (saveUpTarget === 0n || this.player.gold() >= saveUpTarget) {
@@ -912,6 +1004,8 @@ export class NationStructureBehavior {
         return this.portValue();
       case UnitType.SAMLauncher:
         return this.samLauncherValue();
+      case UnitType.Airport:
+        return this.airportValue();
       default:
         throw new Error(`Value function not implemented for ${type}`);
     }
@@ -1355,6 +1449,93 @@ export class NationStructureBehavior {
 
       return w;
     };
+  }
+
+  /**
+   * Value function for airports.
+   * Prefers a spot a bit behind the front with the nation's enemies: deep
+   * enough that a land push doesn't take it at once (at least borderSpacing
+   * from the front), close enough that as much enemy land as possible is in
+   * paradrop range. Also counts enemy structures in paradrop range and keeps
+   * spacing from other own airports.
+   */
+  private airportValue(): (tile: TileRef) => number {
+    const game = this.game;
+    const { borderSpacing, structureSpacing } = this.spacingConstants();
+    const range = game.config().paradropRange();
+    const rangeSquared = range * range;
+    const minDepth = borderSpacing;
+    const maxDepth = borderSpacing * 2;
+
+    const enemies = this.paradropEnemies();
+    const front = this.enemyFrontTiles(enemies, AIRPORT_FRONT_SAMPLE_SIZE);
+    const enemyStructures = everyNth(
+      enemies.flatMap((e) => e.units(PARADROP_TARGET_STRUCTURES)),
+      AIRPORT_ENEMY_STRUCTURE_SAMPLE_SIZE,
+    ).map((u) => u.tile());
+    const otherAirports = this.player
+      .units(UnitType.Airport)
+      .map((u) => u.tile());
+
+    return (tile) => {
+      let w = 0;
+
+      // Distance to the front with our enemies: stay out of reach of the
+      // first push, but not deeper than needed.
+      if (front.length > 0) {
+        let frontDistSquared = Infinity;
+        for (const f of front) {
+          const d = game.euclideanDistSquared(tile, f);
+          if (d < frontDistSquared) frontDistSquared = d;
+        }
+        const frontDist = Math.sqrt(frontDistSquared);
+        if (frontDist < minDepth) {
+          w -= (minDepth - frontDist) * 4;
+        } else if (frontDist <= maxDepth) {
+          w += structureSpacing;
+        } else {
+          w += Math.max(0, structureSpacing - (frontDist - maxDepth) / 2);
+        }
+      }
+
+      // Enemy structures within paradrop range
+      for (const s of enemyStructures) {
+        if (game.euclideanDistSquared(tile, s) <= rangeSquared) w += 5;
+      }
+
+      // Prefer to be away from other airports
+      let d = Infinity;
+      for (const a of otherAirports) {
+        if (a === tile) continue;
+        d = Math.min(d, Math.sqrt(game.euclideanDistSquared(tile, a)));
+      }
+      if (d !== Infinity) w += Math.min(d, structureSpacing);
+
+      return w;
+    };
+  }
+
+  /**
+   * Own border tiles touching one of `enemies`, evenly thinned out to at
+   * most `maxTiles` (no randomness, so scoring doesn't shift the RNG).
+   */
+  private enemyFrontTiles(enemies: Player[], maxTiles: number): TileRef[] {
+    if (enemies.length === 0) return [];
+    const game = this.game;
+    const enemySet = new Set<Player>(enemies);
+    const front: TileRef[] = [];
+    const nbuf = NEIGHBOR_SCRATCH;
+    this.player.borderTiles().forEach((borderTile) => {
+      const n = game.neighbors4(borderTile, nbuf);
+      for (let i = 0; i < n; i++) {
+        const owner = game.owner(nbuf[i]);
+        if (owner.isPlayer() && enemySet.has(owner)) {
+          front.push(borderTile);
+          return;
+        }
+      }
+    });
+    return everyNth(front, maxTiles);
   }
 
   /** Shared spacing constants derived from atom bomb range. */
