@@ -9,6 +9,9 @@ export class AttackImpl implements Attack {
   public _retreating = false;
   public _retreated = false;
   private _focusTile: TileRef | null = null;
+  private _paradrop = false;
+  private _linkedUp = false;
+  private _anchors: TileRef[] = [];
 
   constructor(
     private _id: string,
@@ -30,6 +33,35 @@ export class AttackImpl implements Attack {
 
   setFocusTile(tile: TileRef | null): void {
     this._focusTile = tile;
+  }
+
+  isParadrop(): boolean {
+    return this._paradrop;
+  }
+
+  setParadrop(): void {
+    this._paradrop = true;
+  }
+
+  paradropAnchors(): readonly TileRef[] {
+    return this._anchors;
+  }
+
+  // Keeps the last few conquests: recent ones sit on the pocket's front, so
+  // at least one of them is a border tile even as older ones end up inside.
+  addParadropAnchor(tile: TileRef): void {
+    this._anchors.push(tile);
+    if (this._anchors.length > 16) {
+      this._anchors.shift();
+    }
+  }
+
+  linkedUp(): boolean {
+    return this._linkedUp;
+  }
+
+  setLinkedUp(): void {
+    this._linkedUp = true;
   }
 
   target(): Player | TerraNullius {

@@ -1,5 +1,6 @@
 import { Config } from "../configuration/Config";
 import {
+  Attack,
   Cell,
   Execution,
   Game,
@@ -21,6 +22,8 @@ export class PlayerExecution implements Execution {
 
   private config: Config;
   private lastCalc = 0;
+  // Live paradrop attacks at the last tick (see tick()).
+  private liveParadrops = 0;
   private mg: Game;
   // Direct GameMap reference to skip the Game delegation hop in hot loops.
   private map: GameMap;
@@ -108,11 +111,21 @@ export class PlayerExecution implements Execution {
       }
     }
 
+    // A paradrop pocket loses its protection when its attack ends without
+    // any tile changing hands, so an ended paradrop forces a recalculation.
+    let liveParadrops = 0;
+    for (const attack of this.player.outgoingAttacks()) {
+      if (attack.isParadrop()) liveParadrops++;
+    }
+    const paradropEnded = liveParadrops < this.liveParadrops;
+    this.liveParadrops = liveParadrops;
+
     if (
+      paradropEnded ||
       ticks - this.lastCalc > this.ticksPerClusterCalc ||
       this.player.numTilesOwned() < 100
     ) {
-      if (this.player.lastTileChange() >= this.lastCalc) {
+      if (paradropEnded || this.player.lastTileChange() >= this.lastCalc) {
         this.lastCalc = ticks;
         const start = performance.now();
         this.removeClusters();
@@ -139,6 +152,14 @@ export class PlayerExecution implements Execution {
         min: new Cell(boxes[0], boxes[1]),
         max: new Cell(boxes[2], boxes[3]),
       };
+      // One cluster left: any paradrop pocket is part of it now.
+      const airheads = this.paradropAnchors();
+      if (airheads !== null) {
+        for (const t of clusters[0]) {
+          const attack = airheads.get(t);
+          if (attack !== undefined) attack.setLinkedUp();
+        }
+      }
       const surroundedBy = this.surroundedBySamePlayer(
         clusters[0],
         boxes[0],
@@ -263,6 +284,15 @@ export class PlayerExecution implements Execution {
     const largestCluster = clusters[largestIndex];
     if (largestCluster === undefined) throw new Error("No clusters");
 
+    // A paradrop pocket that has joined the main territory has linked up.
+    const airheads = this.paradropAnchors();
+    if (airheads !== null) {
+      for (const t of largestCluster) {
+        const attack = airheads.get(t);
+        if (attack !== undefined) attack.setLinkedUp();
+      }
+    }
+
     const lIdx = largestIndex * 4;
     this.player.largestClusterBoundingBox = {
       min: new Cell(boxes[lIdx], boxes[lIdx + 1]),
@@ -284,6 +314,10 @@ export class PlayerExecution implements Execution {
     for (let i = 0; i < clusters.length; i++) {
       if (i === largestIndex) continue;
       const cluster = clusters[i];
+      // Being surrounded is the normal state of a live paradrop pocket.
+      if (airheads !== null && cluster.some((t) => airheads.has(t))) {
+        continue;
+      }
       const idx = i * 4;
       if (
         this.isSurrounded(
@@ -297,6 +331,21 @@ export class PlayerExecution implements Execution {
         this.removeCluster(cluster);
       }
     }
+  }
+
+  // Recent conquests of this player's live paradrop attacks that it still
+  // holds, or null when there are none (the common case).
+  private paradropAnchors(): Map<TileRef, Attack> | null {
+    let anchors: Map<TileRef, Attack> | null = null;
+    for (const attack of this.player.outgoingAttacks()) {
+      if (!attack.isParadrop() || attack.linkedUp()) continue;
+      for (const t of attack.paradropAnchors()) {
+        if (this.mg.ownerID(t) !== this.player.smallID()) continue;
+        anchors ??= new Map();
+        anchors.set(t, attack);
+      }
+    }
+    return anchors;
   }
 
   private checkAndAssignTerritory(

@@ -1609,10 +1609,43 @@ export class PlayerImpl implements Player {
       case UnitType.SAMLauncher:
       case UnitType.City:
       case UnitType.Factory:
+      case UnitType.Airport:
         return this.landBasedStructureSpawn(targetTile, validTiles);
+      case UnitType.TransportPlane:
+        return this.airportSpawn(targetTile);
       default:
         assertNever(unitType);
     }
+  }
+
+  // Nearest ready airport in range of a drop on `tile`, or false when the drop
+  // is not allowed (not enemy/unowned land, or no airport can reach it).
+  airportSpawn(tile: TileRef): TileRef | false {
+    const mg = this.mg;
+    if (mg.isSpawnImmunityActive()) {
+      return false;
+    }
+    if (!mg.isLand(tile) || mg.isImpassable(tile)) {
+      return false;
+    }
+    const owner = mg.owner(tile);
+    if (owner === this) {
+      return false;
+    }
+    if (owner.isPlayer() && !this.canAttackPlayer(owner)) {
+      return false;
+    }
+    const range = mg.config().paradropRange();
+    const best = findClosestBy(
+      this.units(UnitType.Airport),
+      (airport) => mg.euclideanDistSquared(airport.tile(), tile),
+      (airport) =>
+        airport.isActive() &&
+        !airport.isUnderConstruction() &&
+        !airport.isInCooldown() &&
+        mg.euclideanDistSquared(airport.tile(), tile) <= range * range,
+    );
+    return best?.tile() ?? false;
   }
 
   nukeSpawn(tile: TileRef, nukeType: UnitType): TileRef | false {

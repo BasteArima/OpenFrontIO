@@ -208,6 +208,10 @@ export enum UnitType {
   MIRVWarhead = "MIRV Warhead",
   Train = "Train",
   Factory = "Factory",
+  // Paratroopers: the airport launches transport planes that drop troops
+  // deep inside enemy land (ParadropExecution).
+  Airport = "Airport",
+  TransportPlane = "Transport Plane",
 }
 
 export enum TrainType {
@@ -228,6 +232,7 @@ export const BuildableAttacks = unitTypeGroup([
   UnitType.HydrogenBomb,
   UnitType.MIRV,
   UnitType.Warship,
+  UnitType.TransportPlane,
 ] as const);
 
 export const Structures = unitTypeGroup([
@@ -237,6 +242,7 @@ export const Structures = unitTypeGroup([
   UnitType.MissileSilo,
   UnitType.Port,
   UnitType.Factory,
+  UnitType.Airport,
 ] as const);
 
 export const BuildMenus = unitTypeGroup([
@@ -317,6 +323,13 @@ export interface UnitParamsMap {
   [UnitType.SAMLauncher]: Record<string, never>;
 
   [UnitType.City]: Record<string, never>;
+
+  [UnitType.Airport]: Record<string, never>;
+
+  [UnitType.TransportPlane]: {
+    troops?: number;
+    targetTile?: TileRef;
+  };
 }
 
 // Type helper to get params type for a specific unit type
@@ -401,6 +414,17 @@ export interface Attack {
   // intent). Tiles near it are conquered first, so the front becomes a wedge.
   focusTile(): TileRef | null;
   setFocusTile(tile: TileRef | null): void;
+  // Paratroopers (ParadropExecution). A paradrop attack fights from a pocket
+  // inside enemy land: PlayerExecution spares the pocket from encirclement
+  // while the attack lives, and flags it linked up once the pocket joins the
+  // player's main territory. Anchors are the attack's most recent conquests,
+  // i.e. tiles on the pocket's border, used to find the pocket's cluster.
+  isParadrop(): boolean;
+  setParadrop(): void;
+  paradropAnchors(): readonly TileRef[];
+  addParadropAnchor(tile: TileRef): void;
+  linkedUp(): boolean;
+  setLinkedUp(): void;
   addBorderTile(tile: TileRef): void;
   removeBorderTile(tile: TileRef): void;
   clearBorder(): void;

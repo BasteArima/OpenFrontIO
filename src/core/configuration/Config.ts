@@ -390,6 +390,36 @@ export class Config {
   SAMCooldown(): number {
     return 90;
   }
+  // Paratroopers. An airport level is one plane in the air at a time; each
+  // sortie keeps its slot busy for the cooldown.
+  airportCooldown(): number {
+    return 30 * 10;
+  }
+  paradropRange(): number {
+    return 300;
+  }
+  transportPlaneSpeed(): number {
+    return 4;
+  }
+  // Share of the player's current troops one plane can carry.
+  paradropMaxTroopShare(): number {
+    return 0.25;
+  }
+  // Radius of the landing zone taken the moment the troops land.
+  paradropDropRadius(): number {
+    return 3;
+  }
+  // Share of a cut-off paradrop group lost per tick (0.002 = 2% a second):
+  // without supply it lasts about a minute unless it links up.
+  paradropAttritionPerTick(): number {
+    return 0.002;
+  }
+  // Chance that one hostile SAM launcher shoots down a transport plane flying
+  // through its range. Separate from its missiles, which stay for nukes.
+  samFlakChance(samLevel: number): number {
+    return Math.min(0.9, 0.35 + 0.15 * (samLevel - 1));
+  }
+
   SiloCooldown(): number {
     return 90;
   }
@@ -711,6 +741,19 @@ export class Config {
       case UnitType.Train:
         info = {
           cost: () => 0n,
+        };
+        break;
+      case UnitType.Airport:
+        info = {
+          cost: this.costWrapper(() => 1_000_000, UnitType.Airport),
+          constructionDuration: this.instantBuild() ? 0 : 10 * 10,
+          upgradable: true,
+        };
+        break;
+      case UnitType.TransportPlane:
+        // Priced per sortie: the plane is spent on the drop.
+        info = {
+          cost: this.costWrapper(() => 400_000, UnitType.TransportPlane),
         };
         break;
       default:

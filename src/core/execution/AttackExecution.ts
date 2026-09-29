@@ -13,7 +13,7 @@ import {
   TerraNullius,
   UnitType,
 } from "../game/Game";
-import { GameMap, TileRef } from "../game/GameMap";
+import { andFN, euclDistFN, GameMap, TileRef } from "../game/GameMap";
 import { PseudoRandom } from "../PseudoRandom";
 import { assertNever } from "../Util";
 import { FlatBinaryHeap } from "./utils/FlatBinaryHeap"; // adjust path if needed
@@ -55,6 +55,9 @@ export class AttackExecution implements Execution {
     private _targetID: PlayerID | null,
     private sourceTile: TileRef | null = null,
     private removeTroops: boolean = true,
+    // Paratroopers dropped on sourceTile (ParadropExecution): they take the
+    // landing zone, fight on from a pocket and only get home by linking up.
+    private paradrop: boolean = false,
   ) {}
 
   public targetID(): PlayerID | null {
@@ -138,7 +141,10 @@ export class AttackExecution implements Execution {
       new Set<TileRef>(),
     );
 
-    if (this.sourceTile !== null) {
+    if (this.paradrop && this.sourceTile !== null) {
+      this.attack.setParadrop();
+      this.takeLandingZone(this.sourceTile);
+    } else if (this.sourceTile !== null) {
       this.addNeighbors(this.sourceTile);
     } else {
       this.refreshToConquer();
@@ -147,7 +153,9 @@ export class AttackExecution implements Execution {
     // Record stats
     this.mg.stats().attack(this._owner, this.target, this.startTroops);
 
-    for (const incoming of this._owner.incomingAttacks()) {
+    // Paratroopers land behind the lines, not on the front the target's own
+    // attack is pushing across, so they don't cancel it out.
+    for (const incoming of this.paradrop ? [] : this._owner.incomingAttacks()) {
       if (incoming.attacker() === this.target) {
         // Target has opposing attack, cancel them out
         if (incoming.troops() > this.attack.troops()) {
@@ -166,7 +174,9 @@ export class AttackExecution implements Execution {
         outgoing !== this.attack &&
         outgoing.target() === this.attack.target() &&
         // Boat attacks (sourceTile is not null) are not combined with other attacks
-        this.attack.sourceTile() === null
+        this.attack.sourceTile() === null &&
+        // Nor absorbed: a paradrop group is cut off until it links up.
+        !outgoing.isParadrop()
       ) {
         this.attack.setTroops(this.attack.troops() + outgoing.troops());
         // Re-clicking to reinforce replaces the attack object; keep its focus.
@@ -226,13 +236,28 @@ export class AttackExecution implements Execution {
     this._owner.borderTiles().forEach((tile) => this.addNeighbors(tile));
   }
 
-  private retreat(malusPercent = 0) {
+  private retreat(malusPercent = 0, forceRefund = false) {
     if (this.attack === null) {
       throw new Error("Attack not initialized");
     }
 
-    const deaths = this.attack.troops() * (malusPercent / 100);
-    if (deaths) {
+    // A paradrop group that never linked up has no way home: cancelling it is
+    // a surrender, and running out of front means it was wiped out.
+    const stranded = this.paradrop && !this.attack.linkedUp() && !forceRefund;
+    const deaths = stranded
+      ? this.attack.troops()
+      : this.attack.troops() * (malusPercent / 100);
+    if (stranded) {
+      if (deaths >= 1) {
+        this.mg.displayMessage(
+          "events_display.paradrop_lost",
+          MessageType.ATTACK_CANCELLED,
+          this._owner.id(),
+          undefined,
+          { troops: renderTroops(deaths) },
+        );
+      }
+    } else if (deaths) {
       this.mg.displayMessage(
         "events_display.attack_cancelled_retreat",
         MessageType.ATTACK_CANCELLED,
@@ -289,8 +314,26 @@ export class AttackExecution implements Execution {
 
     if (targetPlayer && this._owner.isFriendly(targetPlayer)) {
       // In this case a new alliance was created AFTER the attack started.
-      this.retreat();
+      // Peace also brings paratroopers home.
+      this.retreat(0, true);
       return;
+    }
+
+    if (this.paradrop) {
+      if (this.attack.linkedUp()) {
+        this.mg.displayMessage(
+          "events_display.paradrop_linked_up",
+          MessageType.ATTACK_CANCELLED,
+          this._owner.id(),
+          undefined,
+          { troops: renderTroops(troopCount) },
+        );
+        this.retreat();
+        return;
+      }
+      // Cut off from supply, the group wears down until it links up.
+      troopCount -= troopCount * this.mg.config().paradropAttritionPerTick();
+      this.attack.setTroops(troopCount);
     }
 
     let focus = this.attack.focusTile();
@@ -365,6 +408,9 @@ export class AttackExecution implements Execution {
         targetPlayer.removeTroops(defenderTroopLoss);
       }
       this._owner.conquer(tileToConquer);
+      if (this.paradrop) {
+        this.attack.addParadropAnchor(tileToConquer);
+      }
       if (this.appliedFocus !== null) {
         this.focusTipDist = Math.min(
           this.focusTipDist,
@@ -483,6 +529,29 @@ export class AttackExecution implements Execution {
       const priority = delay + tickNow;
 
       this.toConquer.enqueue(neighbor, priority);
+    }
+  }
+
+  // Paratroopers take the target's land within the drop radius of where they
+  // land (only land reachable through the target's own tiles), then attack
+  // outward from every tile of it.
+  private takeLandingZone(dropTile: TileRef) {
+    const zone = this.map.bfs(
+      dropTile,
+      andFN(
+        (gm, t) =>
+          gm.ownerID(t) === this.targetSmallID &&
+          gm.isLand(t) &&
+          !gm.isImpassable(t),
+        euclDistFN(dropTile, this.mg.config().paradropDropRadius()),
+      ),
+    );
+    for (const tile of zone) {
+      this._owner.conquer(tile);
+      this.attack!.addParadropAnchor(tile);
+    }
+    for (const tile of zone) {
+      this.addNeighbors(tile);
     }
   }
 
