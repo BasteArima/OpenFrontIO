@@ -12,6 +12,7 @@ export class AttackImpl implements Attack {
   private _paradrop = false;
   private _linkedUp = false;
   private _anchors: TileRef[] = [];
+  private _paradropTiles = 0;
 
   constructor(
     private _id: string,
@@ -50,10 +51,15 @@ export class AttackImpl implements Attack {
   // Keeps the last few conquests: recent ones sit on the pocket's front, so
   // at least one of them is a border tile even as older ones end up inside.
   addParadropAnchor(tile: TileRef): void {
+    this._paradropTiles++;
     this._anchors.push(tile);
     if (this._anchors.length > 16) {
       this._anchors.shift();
     }
+  }
+
+  paradropTileCount(): number {
+    return this._paradropTiles;
   }
 
   linkedUp(): boolean {

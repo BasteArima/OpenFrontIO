@@ -232,8 +232,54 @@ export class AttackExecution implements Execution {
       });
       this.focusTipDist = tip;
     }
+    // A cut-off paradrop pocket is not a front for other attacks: troops
+    // can't reach it overland until it links up (paradrop attacks
+    // themselves never come here with a live pocket of their own).
+    const pockets = this.paradrop ? null : this.cutOffPocketTiles();
     // forEach over the dense storage — the values() generator showed up in long-game profiles
-    this._owner.borderTiles().forEach((tile) => this.addNeighbors(tile));
+    this._owner.borderTiles().forEach((tile) => {
+      if (pockets === null || !pockets.has(tile)) this.addNeighbors(tile);
+    });
+  }
+
+  // Tiles of the owner's paradrop pockets that have not linked up, or null
+  // when there are none. A pocket is flooded from its anchors over the
+  // owner's land; if the flood outgrows everything the group ever took, the
+  // pocket already touches other land of ours (the link-up just hasn't been
+  // noticed yet) and is left out.
+  private cutOffPocketTiles(): Set<TileRef> | null {
+    let pockets: Set<TileRef> | null = null;
+    for (const attack of this._owner.outgoingAttacks()) {
+      if (!attack.isParadrop() || attack.linkedUp()) continue;
+      const limit = attack.paradropTileCount();
+      const pocket = new Set<TileRef>();
+      const stack: TileRef[] = [];
+      for (const t of attack.paradropAnchors()) {
+        if (this.map.ownerID(t) === this.ownerSmallID && !pocket.has(t)) {
+          pocket.add(t);
+          stack.push(t);
+        }
+      }
+      let connected = false;
+      while (stack.length > 0 && !connected) {
+        const n = this.map.neighbors4(stack.pop()!, this.nbuf2);
+        for (let i = 0; i < n; i++) {
+          const next = this.nbuf2[i];
+          if (pocket.has(next) || this.map.ownerID(next) !== this.ownerSmallID)
+            continue;
+          pocket.add(next);
+          stack.push(next);
+          if (pocket.size > limit) {
+            connected = true;
+            break;
+          }
+        }
+      }
+      if (connected || pocket.size === 0) continue;
+      pockets ??= new Set();
+      for (const t of pocket) pockets.add(t);
+    }
+    return pockets;
   }
 
   private retreat(malusPercent = 0, forceRefund = false) {

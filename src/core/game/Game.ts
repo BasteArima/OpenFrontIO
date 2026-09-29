@@ -423,6 +423,9 @@ export interface Attack {
   setParadrop(): void;
   paradropAnchors(): readonly TileRef[];
   addParadropAnchor(tile: TileRef): void;
+  // Tiles the paradrop group has taken so far (landing zone + conquests):
+  // an upper bound on its pocket while cut off.
+  paradropTileCount(): number;
   linkedUp(): boolean;
   setLinkedUp(): void;
   addBorderTile(tile: TileRef): void;

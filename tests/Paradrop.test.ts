@@ -1,3 +1,4 @@
+import { AttackExecution } from "../src/core/execution/AttackExecution";
 import { ParadropExecution } from "../src/core/execution/ParadropExecution";
 import { RetreatExecution } from "../src/core/execution/RetreatExecution";
 import { SpawnExecution } from "../src/core/execution/SpawnExecution";
@@ -202,6 +203,27 @@ describe("Paradrop", () => {
     game.executeNextTick();
     const plane = attacker.units(UnitType.TransportPlane)[0];
     expect(plane.troops()).toBeLessThanOrEqual(troops * 0.25 + 1);
+  });
+
+  test("other attacks don't use a cut-off pocket as a front", async () => {
+    const { game, attacker, defender } = await newGame();
+    game.addExecution(
+      new ParadropExecution(attacker, game.ref(80, 50), 10_000),
+    );
+    game.executeNextTick();
+    fly(game, attacker);
+    game.executeNextTick();
+    expect(paradropAttack(attacker)).toBeDefined();
+
+    // A land attack on the same defender: its front is the x = 50 border of
+    // the main territory (100 tiles), not also the pocket's perimeter.
+    game.addExecution(new AttackExecution(5_000, attacker, defender.id()));
+    game.executeNextTick();
+    const land = attacker
+      .outgoingAttacks()
+      .find((a) => !a.isParadrop() && a.target() === defender);
+    expect(land).toBeDefined();
+    expect(land!.borderSize()).toBeLessThanOrEqual(100);
   });
 
   test("own land, allies and water are not valid drop zones", async () => {
