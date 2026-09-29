@@ -449,6 +449,9 @@ function createMenuElements(
             text: translateText(item.description ?? ""),
             className: "description",
           },
+          item.levelInfo
+            ? { text: translateText(item.levelInfo), className: "description" }
+            : null,
           {
             text: `${renderNumber(params.buildMenu.cost(item))} ${translateText("player_panel.gold")}`,
             className: "cost",

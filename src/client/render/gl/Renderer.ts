@@ -93,6 +93,8 @@ const SAM_RADIUS_GHOST_TYPES = new Set([
   "City",
   "Atom Bomb",
   "Hydrogen Bomb",
+  // SAMs can shoot the paratrooper plane down, so show them while aiming.
+  "Transport Plane",
 ]);
 
 /** Subset for build-button hover — excludes City/Silo (SAM radii irrelevant). */

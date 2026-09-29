@@ -157,7 +157,7 @@
   },
   "build_menu": {
     "desc": {
-      "airport": "Launches paratrooper planes within 300 tiles. One plane per level, 30 s cooldown.",
+      "airport": "Launches paratrooper planes within 300 tiles.",
       "atom_bomb": "Small explosion",
       "city": "Increases max population",
       "defense_post": "Increases defenses of nearby borders",
@@ -169,6 +169,14 @@
       "sam_launcher": "Defends against incoming nukes",
       "transport_plane": "Drop troops (attack ratio, max 25%) deep in enemy land from the nearest airport. SAMs can shoot the plane down.",
       "warship": "Captures trade ships, destroys ships and boats"
+    },
+    "level": {
+      "airport": "Each level: +1 plane per 30 s cooldown",
+      "city": "Each level: +250K max troops",
+      "factory": "Each level: sends trains more often",
+      "missile_silo": "Each level: +1 missile per 9 s reload",
+      "port": "Each level: sends trade ships more often and draws more of them",
+      "sam_launcher": "Each level: +1 missile per reload, wider range, better odds against planes"
     },
     "not_enough_money": "Not enough money",
     "upgrade_amount": "x{amount}",

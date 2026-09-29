@@ -44,6 +44,8 @@ export interface BuildItemDisplay {
   unitType: PlayerBuildableUnitType;
   icon: string;
   description?: string;
+  // What each extra level of an upgradable structure adds.
+  levelInfo?: string;
   key?: string;
   countable?: boolean;
 }
@@ -89,6 +91,7 @@ export const buildTable: BuildItemDisplay[][] = [
       unitType: UnitType.Port,
       icon: portIcon,
       description: "build_menu.desc.port",
+      levelInfo: "build_menu.level.port",
       key: "unit_type.port",
       countable: true,
     },
@@ -96,6 +99,7 @@ export const buildTable: BuildItemDisplay[][] = [
       unitType: UnitType.MissileSilo,
       icon: missileSiloIcon,
       description: "build_menu.desc.missile_silo",
+      levelInfo: "build_menu.level.missile_silo",
       key: "unit_type.missile_silo",
       countable: true,
     },
@@ -103,6 +107,7 @@ export const buildTable: BuildItemDisplay[][] = [
       unitType: UnitType.SAMLauncher,
       icon: samlauncherIcon,
       description: "build_menu.desc.sam_launcher",
+      levelInfo: "build_menu.level.sam_launcher",
       key: "unit_type.sam_launcher",
       countable: true,
     },
@@ -117,6 +122,7 @@ export const buildTable: BuildItemDisplay[][] = [
       unitType: UnitType.City,
       icon: cityIcon,
       description: "build_menu.desc.city",
+      levelInfo: "build_menu.level.city",
       key: "unit_type.city",
       countable: true,
     },
@@ -124,6 +130,7 @@ export const buildTable: BuildItemDisplay[][] = [
       unitType: UnitType.Factory,
       icon: factoryIcon,
       description: "build_menu.desc.factory",
+      levelInfo: "build_menu.level.factory",
       key: "unit_type.factory",
       countable: true,
     },
@@ -131,6 +138,7 @@ export const buildTable: BuildItemDisplay[][] = [
       unitType: UnitType.Airport,
       icon: airportIcon,
       description: "build_menu.desc.airport",
+      levelInfo: "build_menu.level.airport",
       key: "unit_type.airport",
       countable: true,
     },
@@ -461,6 +469,11 @@ export class BuildMenu extends LitElement implements Controller {
                       >${item.description &&
                       translateText(item.description)}</span
                     >
+                    ${item.levelInfo
+                      ? html`<span class="build-description"
+                          >${translateText(item.levelInfo)}</span
+                        >`
+                      : null}
                     <span class="build-cost" translate="no">
                       ${renderNumber(
                         this.game && this.game.myPlayer() ? this.cost(item) : 0,

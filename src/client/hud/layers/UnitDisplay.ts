@@ -30,6 +30,7 @@ import {
   warshipIcon,
 } from "../HotbarIcons";
 import { TutorialHighlight, TutorialHighlightEvent } from "../Tutorial";
+import { flattenedBuildTable } from "./BuildMenu";
 
 @customElement("unit-display")
 export class UnitDisplay extends LitElement implements Controller {
@@ -222,6 +223,10 @@ export class UnitDisplay extends LitElement implements Controller {
             "mirv",
             this.keybinds["buildMIRV"]?.key ?? "0",
           )}
+        </div>
+        <div
+          class="grid grid-rows-1 grid-flow-col gap-0.5 w-fit mx-auto mt-0.5"
+        >
           ${this.renderUnitItem(
             airportIcon,
             this._airports,
@@ -251,6 +256,9 @@ export class UnitDisplay extends LitElement implements Controller {
     if (this.game.config().isUnitDisabled(unitType)) {
       return html``;
     }
+    const levelInfo = flattenedBuildTable.find(
+      (item) => item.unitType === unitType,
+    )?.levelInfo;
     const selected = this.uiState.ghostStructure === unitType;
     const hovered = this._hoveredUnit === unitType;
     const displayHotkey = hotkey
@@ -283,6 +291,11 @@ export class UnitDisplay extends LitElement implements Controller {
                 <div class="p-2">
                   ${translateText("build_menu.desc." + structureKey)}
                 </div>
+                ${levelInfo
+                  ? html`<div class="px-2 pb-1 text-[11px] text-cyan-200">
+                      ${translateText(levelInfo)}
+                    </div>`
+                  : null}
                 ${unitType === UnitType.Warship
                   ? html`<div
                       class="mt-1 px-2 py-1 text-[10px] text-cyan-300 border-t border-white/10"
