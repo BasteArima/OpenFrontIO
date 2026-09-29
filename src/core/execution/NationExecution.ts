@@ -19,6 +19,7 @@ import { NationAllianceBehavior } from "./nation/NationAllianceBehavior";
 import { NationEmojiBehavior } from "./nation/NationEmojiBehavior";
 import { NationMIRVBehavior } from "./nation/NationMIRVBehavior";
 import { NationNukeBehavior } from "./nation/NationNukeBehavior";
+import { NationParadropBehavior } from "./nation/NationParadropBehavior";
 import { NationStructureBehavior } from "./nation/NationStructureBehavior";
 import { NationWarshipBehavior } from "./nation/NationWarshipBehavior";
 import { SpawnExecution } from "./SpawnExecution";
@@ -35,6 +36,7 @@ export class NationExecution implements Execution {
   private allianceBehavior!: NationAllianceBehavior;
   private warshipBehavior!: NationWarshipBehavior;
   private nukeBehavior!: NationNukeBehavior;
+  private paradropBehavior!: NationParadropBehavior;
   private structureBehavior!: NationStructureBehavior;
   private mg: Game;
   private player: Player | null = null;
@@ -204,6 +206,9 @@ export class NationExecution implements Execution {
     this.structureBehavior.handleStructures();
     this.warshipBehavior.maybeSpawnWarship();
     this.handleEmbargoesToHostileNations();
+    // Before maybeAttack: troops are at their peak here, and the land attack
+    // sizes itself from whatever the drop leaves.
+    this.paradropBehavior.maybeSendParadrop();
     this.attackBehavior.maybeAttack();
     this.warshipBehavior.counterWarshipInfestation();
     this.nukeBehavior.maybeSendNuke();
@@ -246,6 +251,13 @@ export class NationExecution implements Execution {
       this.emojiBehavior,
     );
     this.nukeBehavior = new NationNukeBehavior(
+      this.random,
+      this.mg,
+      this.player,
+      this.attackBehavior,
+      this.emojiBehavior,
+    );
+    this.paradropBehavior = new NationParadropBehavior(
       this.random,
       this.mg,
       this.player,
