@@ -26,7 +26,8 @@
  *   Col 9: Train Engine (5×5)
  *   Col 10: Train Carriage (5×5)
  *   Col 11: Train Carriage Loaded (5×5)
- *   Col 12: Transport Plane (13×13, paratroopers)
+ *   Col 12–19: Transport Plane (13×13, paratroopers), one per heading:
+ *              N, NE, E, SE, S, SW, W, NW (resolved in updateUnits())
  *
  * Data flow:
  *   FrameSnapshot.units → filter by typeToAtlasIdx → instance VBO → GPU
@@ -87,7 +88,16 @@ const UNIT_ORDER = [
   "TrainEngine",
   "TrainCarriage",
   "TrainCarriageLoaded",
-  UT_TRANSPORT_PLANE,
+  // Transport plane headings, clockwise from north. Synthetic names like the
+  // train ones: the column is picked from the plane's heading.
+  "TransportPlaneN",
+  "TransportPlaneNE",
+  "TransportPlaneE",
+  "TransportPlaneSE",
+  "TransportPlaneS",
+  "TransportPlaneSW",
+  "TransportPlaneW",
+  "TransportPlaneNW",
 ] as const;
 
 const ATLAS_COLS = UNIT_ORDER.length;
@@ -130,6 +140,23 @@ const FLAG_TRADE_SELF = 6;
 const TRAIN_ENGINE_COL = UNIT_ORDER.indexOf("TrainEngine");
 const TRAIN_CARRIAGE_COL = UNIT_ORDER.indexOf("TrainCarriage");
 const TRAIN_CARRIAGE_LOADED_COL = UNIT_ORDER.indexOf("TrainCarriageLoaded");
+/** First of the 8 transport plane heading columns (north). */
+const PLANE_FIRST_COL = UNIT_ORDER.indexOf("TransportPlaneN");
+
+/** Heading of a transport plane as 0–7 (N, NE, … NW): towards its drop tile,
+ *  or along its last step once there. */
+function planeHeading(unit: UnitState, mapW: number): number {
+  let to = unit.targetTile ?? unit.pos;
+  let from = unit.pos;
+  if (to === from) {
+    to = unit.pos;
+    from = unit.lastPos;
+  }
+  const dx = (to % mapW) - (from % mapW);
+  const dy = Math.floor(to / mapW) - Math.floor(from / mapW);
+  if (dx === 0 && dy === 0) return 0;
+  return Math.round(Math.atan2(dx, -dy) / (Math.PI / 4)) & 7;
+}
 
 /** Nuke + warhead types — rendered with flickering hot colors */
 const FLICKER_TYPES: ReadonlySet<string> = new Set([
@@ -474,6 +501,10 @@ export class UnitPass {
             ? TRAIN_CARRIAGE_LOADED_COL
             : TRAIN_CARRIAGE_COL;
         }
+      }
+
+      if (atlasIdx === undefined && unit.unitType === UT_TRANSPORT_PLANE) {
+        atlasIdx = PLANE_FIRST_COL + planeHeading(unit, this.mapW);
       }
 
       if (atlasIdx === undefined) continue;
