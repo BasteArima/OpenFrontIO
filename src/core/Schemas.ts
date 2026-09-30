@@ -56,12 +56,16 @@ export type Intent =
   | UpdateGameConfigIntent
   | ToggleGameStartTimer
   | AttackFocusIntent
-  | ParadropIntent;
+  | ParadropIntent
+  | AirportInterceptIntent;
 
 export type AttackIntent = z.infer<typeof AttackIntentSchema>;
 export type CancelAttackIntent = z.infer<typeof CancelAttackIntentSchema>;
 export type AttackFocusIntent = z.infer<typeof AttackFocusIntentSchema>;
 export type ParadropIntent = z.infer<typeof ParadropIntentSchema>;
+export type AirportInterceptIntent = z.infer<
+  typeof AirportInterceptIntentSchema
+>;
 export type SpawnIntent = z.infer<typeof SpawnIntentSchema>;
 export type BoatAttackIntent = z.infer<typeof BoatAttackIntentSchema>;
 export type EmbargoAllIntent = z.infer<typeof EmbargoAllIntentSchema>;
@@ -647,6 +651,13 @@ export const ParadropIntentSchema = z.object({
   dst: zb.uint(),
 });
 
+// Turns an airport's fighter interception on or off.
+export const AirportInterceptIntentSchema = z.object({
+  type: z.literal("airport_intercept"),
+  unitId: zb.uint(),
+  enabled: z.boolean(),
+});
+
 export const BoatAttackIntentSchema = z.object({
   type: z.literal("boat"),
   // Not an int: troops are fractional throughout the sim (attackRatio *
@@ -823,6 +834,7 @@ export const IntentSchema = z.discriminatedUnion("type", [
   // numbers union variants by position).
   AttackFocusIntentSchema,
   ParadropIntentSchema,
+  AirportInterceptIntentSchema,
 ]);
 
 // StampedIntent = Intent with server-stamped clientID (used in turns and execution)

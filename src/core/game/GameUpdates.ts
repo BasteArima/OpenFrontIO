@@ -200,6 +200,7 @@ export interface UnitUpdate {
   missileTimerQueue: number[];
   level: number;
   hasTrainStation: boolean;
+  interceptDisabled?: boolean; // Only for airports with interception off
   trainType?: TrainType; // Only for trains
   loaded?: boolean; // Only for trains
   samUpgrade?: SamLauncherState;

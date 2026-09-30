@@ -41,6 +41,7 @@ export class UnitImpl implements Unit {
   // Number of missiles in cooldown, if empty all missiles are ready.
   private _missileTimerQueue: number[] = [];
   private _hasTrainStation: boolean = false;
+  private _interceptEnabled: boolean = true;
   private _level: number = 1;
   private _targetable: boolean = true;
   private _loaded: boolean | undefined;
@@ -178,6 +179,10 @@ export class UnitImpl implements Unit {
       missileTimerQueue: this._missileTimerQueue,
       level: this.level(),
       hasTrainStation: this._hasTrainStation,
+      interceptDisabled:
+        this._type === UnitType.Airport && !this._interceptEnabled
+          ? true
+          : undefined,
       trainType: this._trainType,
       loaded: this._loaded,
     };
@@ -715,6 +720,16 @@ export class UnitImpl implements Unit {
 
   setTrainStation(trainStation: boolean): void {
     this._hasTrainStation = trainStation;
+    this.mg.addUpdate(this.toUpdate());
+  }
+
+  interceptEnabled(): boolean {
+    return this._interceptEnabled;
+  }
+
+  setInterceptEnabled(enabled: boolean): void {
+    if (this._interceptEnabled === enabled) return;
+    this._interceptEnabled = enabled;
     this.mg.addUpdate(this.toUpdate());
   }
 

@@ -27,8 +27,10 @@ import { TooltipItem } from "./RadialMenu";
 import { EventBus } from "../../../core/EventBus";
 import {
   BuildUnitIntentEvent,
+  SendAirportInterceptIntentEvent,
   SendUpgradeStructureIntentEvent,
 } from "../../Transport";
+import { UnitView } from "../../view";
 const allianceIcon = assetUrl("images/AllianceIconWhite.svg");
 const boatIcon = assetUrl("images/BoatIconWhite.svg");
 const buildIcon = assetUrl("images/BuildIconWhite.svg");
@@ -37,6 +39,7 @@ const donateGoldIcon = assetUrl("images/DonateGoldIconWhite.svg");
 const donateTroopIcon = assetUrl("images/DonateTroopIconWhite.svg");
 const emojiIcon = assetUrl("images/EmojiIconWhite.svg");
 const infoIcon = assetUrl("images/InfoIcon.svg");
+const interceptIcon = assetUrl("images/InterceptIconWhite.svg");
 const swordIcon = assetUrl("images/SwordIconWhite.svg");
 const targetIcon = assetUrl("images/TargetIconWhite.svg");
 const traitorIcon = assetUrl("images/TraitorIconWhite.svg");
@@ -106,6 +109,8 @@ export const COLORS = {
   infoEmoji: "#fbbf24",
   trade: "#0891b2",
   embargo: "#7c3aed",
+  interceptOn: "#16a34a",
+  interceptOff: "#64748b",
   tooltip: {
     cost: "#f59e0b",
     count: "#94a3b8",
@@ -697,6 +702,57 @@ export const deleteUnitElement: MenuElement = {
   },
 };
 
+// Own airport next to the click, the one the intercept toggle acts on.
+function airportNear(params: MenuElementParams): UnitView | null {
+  const AIRPORT_SELECTION_RADIUS = 5;
+  const airports = params.myPlayer
+    .units(UnitType.Airport)
+    .filter(
+      (unit) =>
+        !unit.isUnderConstruction() &&
+        params.game.manhattanDist(unit.tile(), params.tile) <=
+          AIRPORT_SELECTION_RADIUS,
+    );
+  return (
+    findClosestBy(airports, (unit) =>
+      params.game.manhattanDist(unit.tile(), params.tile),
+    ) ?? null
+  );
+}
+
+// Fighter interception on/off for the airport under the click. Green while
+// the airport scrambles fighters, grey while it keeps its slots.
+function airportInterceptElement(airport: UnitView): MenuElement {
+  const enabled = airport.interceptEnabled();
+  return {
+    id: "airport_intercept",
+    name: "airport_intercept",
+    disabled: () => false,
+    icon: interceptIcon,
+    color: enabled ? COLORS.interceptOn : COLORS.interceptOff,
+    tooltipKeys: [
+      {
+        key: enabled
+          ? "radial_menu.intercept_on_title"
+          : "radial_menu.intercept_off_title",
+        className: "title",
+      },
+      {
+        key: enabled
+          ? "radial_menu.intercept_on_description"
+          : "radial_menu.intercept_off_description",
+        className: "description",
+      },
+    ],
+    action: (params: MenuElementParams) => {
+      params.eventBus.emit(
+        new SendAirportInterceptIntentEvent(airport.id(), !enabled),
+      );
+      params.closeMenu();
+    },
+  };
+}
+
 export const buildMenuElement: MenuElement = {
   id: Slot.Build,
   name: "build",
@@ -804,10 +860,17 @@ export const rootMenuElement: MenuElement = {
     const showDonateInsteadOfAttack =
       isFriendlyTarget(params) && !isDisconnected && !hasBuildableAttacks;
 
+    const airport = isOwnTerritory ? airportNear(params) : null;
+
     const menuItems: (MenuElement | null)[] = [
       infoMenuElement,
       ...(isOwnTerritory
-        ? [deleteUnitElement, allyRequestElement, buildMenuElement]
+        ? [
+            deleteUnitElement,
+            allyRequestElement,
+            buildMenuElement,
+            ...(airport !== null ? [airportInterceptElement(airport)] : []),
+          ]
         : [
             isAllied && !isDisconnected ? allyBreakElement : boatMenuElement,
             inExtensionWindow ? allyExtendElement : allyRequestElement,

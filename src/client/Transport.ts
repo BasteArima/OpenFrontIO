@@ -172,6 +172,14 @@ export class SendParadropIntentEvent implements GameEvent {
   ) {}
 }
 
+// Turns fighter interception on or off for one of our airports.
+export class SendAirportInterceptIntentEvent implements GameEvent {
+  constructor(
+    public readonly unitId: number,
+    public readonly enabled: boolean,
+  ) {}
+}
+
 export class SendAttackFocusIntentEvent implements GameEvent {
   constructor(
     public readonly attackID: string,
@@ -347,6 +355,13 @@ export class Transport {
     );
     this.subscribe(SendParadropIntentEvent, (e) =>
       this.onSendParadropIntentEvent(e),
+    );
+    this.subscribe(SendAirportInterceptIntentEvent, (e) =>
+      this.sendIntent({
+        type: "airport_intercept",
+        unitId: e.unitId,
+        enabled: e.enabled,
+      }),
     );
     this.subscribe(CancelBoatIntentEvent, (e) =>
       this.onCancelBoatIntentEvent(e),

@@ -179,7 +179,8 @@ export class SoundEffectController implements Controller {
     this.emit("sam-hit");
   }
 
-  private onSamLaunch(unit: UnitView): void {
+  // An interceptor (SAM missile or fighter) launched by me or at my unit.
+  private onInterceptorLaunch(unit: UnitView, sound: SoundEffect): void {
     const targetId = unit.targetUnitId();
     const target = targetId !== undefined ? this.game.unit(targetId) : null;
     const myPlayer = this.game.myPlayer();
@@ -192,7 +193,7 @@ export class SoundEffectController implements Controller {
     const tick = this.game.ticks();
     if (tick - this.lastSamShootSoundTick < SAM_SOUND_INTERVAL_TICKS) return;
     this.lastSamShootSoundTick = tick;
-    this.emit("sam-shoot");
+    this.emit(sound);
   }
 
   private onMirvWarheadDetonation(unit: UnitView): void {
@@ -249,7 +250,10 @@ export class SoundEffectController implements Controller {
         }
         break;
       case UnitType.SAMMissile:
-        this.onSamLaunch(unit);
+        this.onInterceptorLaunch(unit, "sam-shoot");
+        break;
+      case UnitType.Fighter:
+        this.onInterceptorLaunch(unit, "fighter-scramble");
         break;
     }
   }

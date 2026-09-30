@@ -69,6 +69,7 @@ function unitStateFromUpdate(u: UnitUpdate): UnitState {
     level: u.level,
     veterancy: u.warshipState?.veterancy ?? 0,
     hasTrainStation: u.hasTrainStation,
+    interceptDisabled: u.interceptDisabled ?? false,
     trainType: trainTypeToNum(u.trainType),
     loaded: u.loaded ?? null,
     constructionStartTick: null, // GameView fills in createdAt when underConstruction
@@ -103,6 +104,7 @@ function applyUpdateInPlace(target: UnitState, u: UnitUpdate): void {
   target.level = u.level;
   target.veterancy = u.warshipState?.veterancy ?? 0;
   target.hasTrainStation = u.hasTrainStation;
+  target.interceptDisabled = u.interceptDisabled ?? false;
   target.trainType = trainTypeToNum(u.trainType);
   target.loaded = u.loaded ?? null;
   target.samUpgradeStartTick = u.samUpgrade?.upgradeStartTick ?? null;
@@ -312,6 +314,9 @@ export class UnitView {
 
   level(): number {
     return this.state.level;
+  }
+  interceptEnabled(): boolean {
+    return !this.state.interceptDisabled;
   }
   hasTrainStation(): boolean {
     return this.state.hasTrainStation;

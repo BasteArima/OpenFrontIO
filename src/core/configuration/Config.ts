@@ -419,6 +419,22 @@ export class Config {
   samFlakChance(samLevel: number): number {
     return Math.min(0.9, 0.35 + 0.15 * (samLevel - 1));
   }
+  // Fighters: an airport with a free slot scrambles one at a hostile
+  // transport plane entering this radius. The sortie takes the slot for
+  // airportCooldown, the same as a paradrop.
+  fighterInterceptRange(): number {
+    return 150;
+  }
+  fighterSpeed(): number {
+    return 8;
+  }
+  fighterHitChance(): number {
+    return 0.65;
+  }
+  // Ticks a fighter chases before it turns back empty-handed.
+  fighterFuelTicks(): number {
+    return 40;
+  }
 
   SiloCooldown(): number {
     return 90;
@@ -754,6 +770,12 @@ export class Config {
         // Priced per sortie: the plane is spent on the drop.
         info = {
           cost: this.costWrapper(() => 400_000, UnitType.TransportPlane),
+        };
+        break;
+      case UnitType.Fighter:
+        // Free: an interception costs the airport slot, not gold.
+        info = {
+          cost: () => 0n,
         };
         break;
       default:

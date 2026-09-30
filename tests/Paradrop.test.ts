@@ -1,3 +1,4 @@
+import { AirportInterceptExecution } from "../src/core/execution/AirportInterceptExecution";
 import { AttackExecution } from "../src/core/execution/AttackExecution";
 import { ParadropExecution } from "../src/core/execution/ParadropExecution";
 import { RetreatExecution } from "../src/core/execution/RetreatExecution";
@@ -93,6 +94,23 @@ class NoFlak extends NoGrowth {
   samFlakChance(): number {
     return 0;
   }
+}
+
+class SureFighter extends NoGrowth {
+  fighterHitChance(): number {
+    return 1;
+  }
+}
+
+class NoFuel extends SureFighter {
+  fighterFuelTicks(): number {
+    return 1;
+  }
+}
+
+function defenderAirport(game: Game, defender: Player) {
+  constructionExecution(game, defender, 90, 50, UnitType.Airport);
+  return defender.units(UnitType.Airport)[0];
 }
 
 function run(game: Game, ticks: number) {
@@ -244,6 +262,76 @@ describe("Paradrop", () => {
   test("airports show up in the building stats", async () => {
     const { game, attacker } = await newGame();
     expect(game.stats().getPlayerStats(attacker)?.units?.airp?.[0]).toBe(1n);
+  });
+
+  test("a hostile airport scrambles a fighter that brings the plane down", async () => {
+    const { game, attacker, defender } = await newGame(SureFighter);
+    const airport = defenderAirport(game, defender);
+    game.addExecution(
+      new ParadropExecution(attacker, game.ref(80, 50), 10_000),
+    );
+    game.executeNextTick();
+    let sawFighter = false;
+    for (let i = 0; i < 200; i++) {
+      game.executeNextTick();
+      const fighters = game.units(UnitType.Fighter);
+      if (fighters.length > 0) {
+        sawFighter = true;
+        expect(fighters[0].owner()).toBe(defender);
+        expect(fighters[0].targetUnit()).toBe(
+          attacker.units(UnitType.TransportPlane)[0],
+        );
+      }
+      if (attacker.units(UnitType.TransportPlane).length === 0) break;
+    }
+    expect(sawFighter).toBe(true);
+    expect(game.units(UnitType.Fighter)).toHaveLength(0);
+    expect(paradropAttack(attacker)).toBeUndefined();
+    // The sortie used the airport's only slot.
+    expect(airport.isInCooldown()).toBe(true);
+    expect(planeStats(game, attacker)[PLANE_INDEX_LOST]).toBe(1n);
+    expect(planeStats(game, defender)[PLANE_INDEX_DOWNED]).toBe(1n);
+  });
+
+  test("an airport with interception off lets the plane through", async () => {
+    const { game, attacker, defender } = await newGame(SureFighter);
+    const airport = defenderAirport(game, defender);
+    game.addExecution(
+      new AirportInterceptExecution(defender, airport.id(), false),
+    );
+    game.executeNextTick();
+    expect(airport.interceptEnabled()).toBe(false);
+
+    const dst = game.ref(80, 50);
+    game.addExecution(new ParadropExecution(attacker, dst, 10_000));
+    game.executeNextTick();
+    fly(game, attacker);
+    game.executeNextTick();
+    expect(paradropAttack(attacker)).toBeDefined();
+    expect(game.owner(dst)).toBe(attacker);
+    expect(airport.isInCooldown()).toBe(false);
+  });
+
+  test("only the owner can switch an airport's interception", async () => {
+    const { game, attacker, defender } = await newGame();
+    const airport = defenderAirport(game, defender);
+    game.addExecution(
+      new AirportInterceptExecution(attacker, airport.id(), false),
+    );
+    game.executeNextTick();
+    expect(airport.interceptEnabled()).toBe(true);
+  });
+
+  test("a fighter out of fuel turns back without a shot", async () => {
+    const { game, attacker, defender } = await newGame(NoFuel);
+    defenderAirport(game, defender);
+    const dst = game.ref(80, 50);
+    game.addExecution(new ParadropExecution(attacker, dst, 10_000));
+    game.executeNextTick();
+    fly(game, attacker);
+    game.executeNextTick();
+    expect(game.units(UnitType.Fighter)).toHaveLength(0);
+    expect(paradropAttack(attacker)).toBeDefined();
   });
 
   test("an airport is busy for its cooldown after a sortie", async () => {

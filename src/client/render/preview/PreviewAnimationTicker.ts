@@ -805,6 +805,7 @@ function createBaseUnitState(
     level: 1,
     veterancy: 0,
     hasTrainStation: false,
+    interceptDisabled: false,
     trainType: null,
     loaded: null,
     constructionStartTick: null,

@@ -212,6 +212,8 @@ export enum UnitType {
   // deep inside enemy land (ParadropExecution).
   Airport = "Airport",
   TransportPlane = "Transport Plane",
+  // Scrambled by an airport to chase down a hostile transport plane.
+  Fighter = "Fighter",
 }
 
 export enum TrainType {
@@ -329,6 +331,10 @@ export interface UnitParamsMap {
   [UnitType.TransportPlane]: {
     troops?: number;
     targetTile?: TileRef;
+  };
+
+  [UnitType.Fighter]: {
+    targetUnit: Unit;
   };
 }
 
@@ -576,6 +582,9 @@ export interface Unit {
 
   // SAMs & Missile Silos
   launch(): void;
+  // Airports: scramble fighters at hostile transport planes (on by default).
+  interceptEnabled(): boolean;
+  setInterceptEnabled(enabled: boolean): void;
   reloadMissile(): void;
   isInCooldown(): boolean;
   missileTimerQueue(): number[];
