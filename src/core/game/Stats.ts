@@ -116,6 +116,13 @@ export interface Stats {
   bombIntercept(player: Player, type: NukeType, count: number | bigint): void;
 
   // Player earns gold from conquering tiles or trade ships from captured
+  planeSend(player: Player, troops: number | bigint): void;
+
+  planeLand(player: Player, troops: number | bigint): void;
+
+  // `player`'s plane was shot down by a SAM belonging to `destroyer`.
+  planeShotDown(player: Player, destroyer: Player): void;
+
   goldWar(player: Player, captured: Player, gold: number | bigint): void;
 
   // Player earns gold from workers

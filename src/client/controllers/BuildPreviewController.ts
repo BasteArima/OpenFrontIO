@@ -28,7 +28,7 @@ import {
 } from "../InputHandler";
 import { buildNukeTrajectory, MapRenderer } from "../render/gl";
 import type { SAMInfo } from "../render/gl/utils/NukeTrajectory";
-import type { GhostPreviewData } from "../render/types";
+import type { GhostPreviewData, NukeTrajectoryData } from "../render/types";
 import { TransformHandler } from "../TransformHandler";
 import {
   BuildUnitIntentEvent,
@@ -46,6 +46,84 @@ export function shouldPreserveGhostAfterBuild(unitType: UnitType): boolean {
 // draws the red X marker essentially at the destination while leaving the
 // visible line unchanged (1.0 would mean "no marker").
 const T_BLOCKED_DST = 0.9999;
+
+/**
+ * Airport a paratrooper drop on the cursor would use, and whether it can.
+ * "ready": the nearest ready airport in range (what PlayerImpl.airportSpawn
+ * picks, so a reloading airport never wins over a ready one);
+ * "cooldown": airports reach the target but all are reloading;
+ * "out_of_range": no airport reaches it (the nearest one is shown).
+ */
+export type PlaneRouteState = "ready" | "cooldown" | "out_of_range";
+
+export interface PlaneRoute {
+  srcX: number;
+  srcY: number;
+  state: PlaneRouteState;
+}
+
+export function choosePlaneAirport(
+  airports: readonly { x: number; y: number; ready: boolean }[],
+  dstX: number,
+  dstY: number,
+  range: number,
+): PlaneRoute | null {
+  let best: PlaneRoute | null = null;
+  let bestRank = Infinity;
+  let bestDist = Infinity;
+  for (const a of airports) {
+    const d2 = (a.x - dstX) ** 2 + (a.y - dstY) ** 2;
+    const state: PlaneRouteState =
+      d2 > range * range ? "out_of_range" : a.ready ? "ready" : "cooldown";
+    const rank = state === "ready" ? 0 : state === "cooldown" ? 1 : 2;
+    if (rank < bestRank || (rank === bestRank && d2 < bestDist)) {
+      best = { srcX: a.x, srcY: a.y, state };
+      bestRank = rank;
+      bestDist = d2;
+    }
+  }
+  return best;
+}
+
+/**
+ * Straight flight line for the paratrooper preview, drawn by the nuke
+ * trajectory pass (a cubic Bezier with collinear control points). The red
+ * "intercepted" tail marks where the plane can not go: past the range edge,
+ * the whole line for a reloading airport, or an X on a target it can not
+ * drop on.
+ */
+export function buildPlaneRoute(
+  route: PlaneRoute,
+  dstX: number,
+  dstY: number,
+  range: number,
+  canDrop: boolean,
+): NukeTrajectoryData {
+  const dx = dstX - route.srcX;
+  const dy = dstY - route.srcY;
+  const dist = Math.hypot(dx, dy);
+  let tStop = 1.0;
+  if (route.state === "cooldown") {
+    tStop = 0;
+  } else if (route.state === "out_of_range" && dist > 0) {
+    tStop = Math.min(range / dist, T_BLOCKED_DST);
+  } else if (!canDrop) {
+    tStop = T_BLOCKED_DST;
+  }
+  return {
+    p0x: route.srcX,
+    p0y: route.srcY,
+    p1x: route.srcX + dx / 3,
+    p1y: route.srcY + dy / 3,
+    p2x: route.srcX + (dx * 2) / 3,
+    p2y: route.srcY + (dy * 2) / 3,
+    p3x: dstX,
+    p3y: dstY,
+    tUntargetableStart: -1,
+    tUntargetableEnd: -1,
+    tSamIntercept: tStop,
+  };
+}
 
 /**
  * Whether a SAM belongs in the nuke trajectory preview's threat set.
@@ -95,6 +173,10 @@ export class BuildPreviewController implements Controller {
     sams: SAMInfo[];
   } | null = null;
 
+  // Airport and reachability for a paratrooper ghost; cursorLoop draws the
+  // flight line from it to the live cursor.
+  private planeRoute: PlaneRoute | null = null;
+
   constructor(
     private game: GameView,
     private eventBus: EventBus,
@@ -123,7 +205,8 @@ export class BuildPreviewController implements Controller {
     const cursorLoop = () => {
       const ghost = this.lastGhostData;
       const traj = this.nukeTrajectoryStatic;
-      if (ghost !== null || traj !== null) {
+      const route = this.planeRoute;
+      if (ghost !== null || traj !== null || route !== null) {
         const w = this.transformHandler.screenToWorldCoordinatesFloat(
           this.mousePos.x,
           this.mousePos.y,
@@ -133,8 +216,11 @@ export class BuildPreviewController implements Controller {
           // follows the cursor, so smooth it the same way as the icon. When
           // upgrading, the circle is anchored to the existing structure's tile
           // (stationary, correctly snapped) — leave it alone in that case.
+          // The paratrooper circle is the chosen airport range, anchored
+          // to the airport.
           const radiusFollowsCursor = !(
-            ghost.canUpgrade && ghost.upgradeTargetTile !== null
+            (ghost.canUpgrade && ghost.upgradeTargetTile !== null) ||
+            ghost.ghostType === UnitType.TransportPlane
           );
           this.view.updateGhostPreview({
             ...ghost,
@@ -169,6 +255,17 @@ export class BuildPreviewController implements Controller {
             data.tSamIntercept = Math.min(data.tSamIntercept, T_BLOCKED_DST);
           }
           this.view.updateNukeTrajectory(data);
+        }
+        if (route !== null) {
+          this.view.updateNukeTrajectory(
+            buildPlaneRoute(
+              route,
+              w.x - 0.5,
+              w.y - 0.5,
+              this.game.config().paradropRange(),
+              this.ghostUnit?.buildableUnit.canBuild !== false,
+            ),
+          );
         }
       }
       requestAnimationFrame(cursorLoop);
@@ -303,6 +400,7 @@ export class BuildPreviewController implements Controller {
     targetingAlly: boolean,
     trajectoryTileRef: TileRef | undefined,
   ): void {
+    this.updatePlaneRoute(trajectoryTileRef);
     const data = this.buildGhostPreviewData(tileRef, targetingAlly);
     if (data === null) {
       this.lastGhostData = null;
@@ -329,7 +427,10 @@ export class BuildPreviewController implements Controller {
     }
     const type = this.ghostUnit.buildableUnit.type;
     if (type !== UnitType.AtomBomb && type !== UnitType.HydrogenBomb) {
-      this.clearNukeTrajectory();
+      // The paratrooper line shares the trajectory pass: drop only the
+      // nuke arc inputs so the line is not cleared under it.
+      this.nukeTrajectoryStatic = null;
+      if (this.planeRoute === null) this.view.updateNukeTrajectory(null);
       return;
     }
     const myPlayer = this.game.myPlayer();
@@ -421,6 +522,37 @@ export class BuildPreviewController implements Controller {
     };
   }
 
+  private updatePlaneRoute(tileRef: TileRef | undefined): void {
+    const myPlayer = this.game.myPlayer();
+    if (
+      !this.ghostUnit ||
+      this.ghostUnit.buildableUnit.type !== UnitType.TransportPlane ||
+      tileRef === undefined ||
+      !myPlayer
+    ) {
+      if (this.planeRoute !== null) {
+        this.planeRoute = null;
+        this.view.updateNukeTrajectory(null);
+      }
+      return;
+    }
+    const airports = myPlayer
+      .units(UnitType.Airport)
+      .filter((a) => a.isActive() && !a.isUnderConstruction())
+      .map((a) => ({
+        x: this.game.x(a.tile()),
+        y: this.game.y(a.tile()),
+        ready: !a.isInCooldown(),
+      }));
+    this.planeRoute = choosePlaneAirport(
+      airports,
+      this.game.x(tileRef),
+      this.game.y(tileRef),
+      this.game.config().paradropRange(),
+    );
+    if (this.planeRoute === null) this.view.updateNukeTrajectory(null);
+  }
+
   private clearNukeTrajectory(): void {
     this.nukeTrajectoryStatic = null;
     this.view.updateNukeTrajectory(null);
@@ -466,11 +598,20 @@ export class BuildPreviewController implements Controller {
         rangeRadius = this.game.config().paradropRange();
         break;
       case UnitType.TransportPlane:
-        rangeRadius = this.game.config().paradropDropRadius();
+        rangeRadius =
+          this.planeRoute !== null
+            ? this.game.config().paradropRange()
+            : this.game.config().paradropDropRadius();
         break;
     }
     let radiusTileX = this.game.x(tileRef);
     let radiusTileY = this.game.y(tileRef);
+    let rangeWarning = targetingAlly;
+    if (u.type === UnitType.TransportPlane && this.planeRoute !== null) {
+      radiusTileX = this.planeRoute.srcX;
+      radiusTileY = this.planeRoute.srcY;
+      rangeWarning = this.planeRoute.state !== "ready";
+    }
     if (
       rangeRadius > 0 &&
       u.canUpgrade !== false &&
@@ -509,7 +650,7 @@ export class BuildPreviewController implements Controller {
       ownerID: myPlayer.smallID(),
       upgradeTargetTile,
       rangeRadius,
-      rangeWarning: targetingAlly,
+      rangeWarning,
     };
   }
 
@@ -655,6 +796,7 @@ export class BuildPreviewController implements Controller {
 
   private clearGhostStructure() {
     this.pendingConfirm = null;
+    this.planeRoute = null;
     this.ghostUnit = null;
     this.lastGhostData = null;
     this.view.updateGhostPreview(null);

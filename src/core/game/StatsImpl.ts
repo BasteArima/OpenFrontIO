@@ -37,6 +37,12 @@ import {
   OTHER_INDEX_LOST,
   OTHER_INDEX_UPGRADE,
   OtherUnitType,
+  PLANE_INDEX_DOWNED,
+  PLANE_INDEX_LAND,
+  PLANE_INDEX_LOST,
+  PLANE_INDEX_SENT,
+  PLANE_INDEX_TROOPS_LANDED,
+  PLANE_INDEX_TROOPS_SENT,
   PLAYER_INDEX_BOT,
   PLAYER_INDEX_HUMAN,
   PLAYER_INDEX_NATION,
@@ -148,6 +154,14 @@ export class StatsImpl implements Stats {
     p.bombs[type] ??= [0n];
     while (p.bombs[type].length <= index) p.bombs[type].push(0n);
     p.bombs[type][index] += _bigint(value);
+  }
+
+  private _addPlane(player: Player, index: number, value: BigIntLike) {
+    const p = this._makePlayerStats(player);
+    if (p === undefined) return;
+    p.planes ??= [0n];
+    while (p.planes.length <= index) p.planes.push(0n);
+    p.planes[index] += _bigint(value);
   }
 
   private _addGold(player: Player, index: number, value: BigIntLike) {
@@ -345,6 +359,21 @@ export class StatsImpl implements Stats {
 
   bombIntercept(player: Player, type: NukeType, count: BigIntLike): void {
     this._addBomb(player, type, BOMB_INDEX_INTERCEPT, count);
+  }
+
+  planeSend(player: Player, troops: BigIntLike): void {
+    this._addPlane(player, PLANE_INDEX_SENT, 1);
+    this._addPlane(player, PLANE_INDEX_TROOPS_SENT, troops);
+  }
+
+  planeLand(player: Player, troops: BigIntLike): void {
+    this._addPlane(player, PLANE_INDEX_LAND, 1);
+    this._addPlane(player, PLANE_INDEX_TROOPS_LANDED, troops);
+  }
+
+  planeShotDown(player: Player, destroyer: Player): void {
+    this._addPlane(player, PLANE_INDEX_LOST, 1);
+    this._addPlane(destroyer, PLANE_INDEX_DOWNED, 1);
   }
 
   goldWork(player: Player, gold: BigIntLike): void {

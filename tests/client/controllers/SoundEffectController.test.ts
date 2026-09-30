@@ -78,6 +78,47 @@ describe("SoundEffectController", () => {
     expect(played).toEqual([]);
   });
 
+  describe("paratroopers", () => {
+    const me = { id: () => "me" };
+    const plane = (active: boolean, reached: boolean, owner: object) => ({
+      id: () => 7,
+      type: () => UnitType.TransportPlane,
+      isActive: () => active,
+      reachedTarget: () => reached,
+      createdAt: () => (active ? tick : 0),
+      owner: () => owner,
+      tile: () => 0,
+      targetTile: () => 0,
+    });
+
+    beforeEach(() => {
+      game.myPlayer = () => me;
+      game.owner = () => ({});
+    });
+
+    it("plays take-off, landing and shoot-down cues for my planes", () => {
+      tickWithUnits(plane(true, false, me));
+      expect(played).toEqual(["plane-launch"]);
+      tickWithUnits(plane(false, true, me));
+      expect(played).toEqual(["plane-launch", "paradrop-land"]);
+      tickWithUnits(plane(false, false, me));
+      expect(played).toEqual(["plane-launch", "paradrop-land", "sam-hit"]);
+    });
+
+    it("stays quiet for someone else's plane far from my land", () => {
+      const other = {};
+      tickWithUnits(plane(true, false, other));
+      tickWithUnits(plane(false, false, other));
+      expect(played).toEqual([]);
+    });
+
+    it("warns me of a plane headed for my land", () => {
+      game.owner = () => me;
+      tickWithUnits(plane(true, false, {}));
+      expect(played).toEqual(["plane-launch"]);
+    });
+  });
+
   // createdAt reads `tick` lazily, so the unit counts as created on whichever
   // tick tickWithUnits delivers it.
   function makeCreatedUnit(id: number, type: UnitType, owner: object) {

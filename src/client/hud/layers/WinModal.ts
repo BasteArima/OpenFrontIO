@@ -1,10 +1,12 @@
-import { html, LitElement, TemplateResult } from "lit";
+import { html, LitElement, nothing, TemplateResult } from "lit";
 import { customElement, state } from "lit/decorators.js";
 import {
   DESKTOP_TUTORIAL_VIDEO_URL,
   getGamesPlayed,
   homeHref,
   isInIframe,
+  renderNumber,
+  renderTroops,
   translateText,
   TUTORIAL_VIDEO_URL,
 } from "../../../client/Utils";
@@ -12,7 +14,16 @@ import { Pattern } from "../../../core/CosmeticSchemas";
 import { EventBus } from "../../../core/EventBus";
 import { RankedType } from "../../../core/game/Game";
 import { GameUpdateType } from "../../../core/game/GameUpdates";
+import { AllPlayersStats } from "../../../core/Schemas";
+import {
+  PLANE_INDEX_DOWNED,
+  PLANE_INDEX_LAND,
+  PLANE_INDEX_LOST,
+  PLANE_INDEX_SENT,
+  PLANE_INDEX_TROOPS_LANDED,
+} from "../../../core/StatsSchemas";
 import { getUserMe } from "../../Api";
+import "../../components/baseComponents/stats/PlayerStatsTable";
 import "../../components/CosmeticCard";
 import { cosmeticSelectionLabel } from "../../components/CosmeticPresentation";
 import "../../components/PurchaseButton";
@@ -50,6 +61,10 @@ export class WinModal extends LitElement implements Controller {
   @state()
   private patternContent: TemplateResult | null = null;
 
+  // End-of-game stats of every human player, from the win update.
+  @state()
+  private allStats: AllPlayersStats | null = null;
+
   private _title: string;
 
   private rand = Math.random();
@@ -74,7 +89,7 @@ export class WinModal extends LitElement implements Controller {
           ${this._title || ""}
         </h2>
         <div class="min-h-0 flex-1 overflow-y-auto pr-0.5">
-          ${this.innerHtml()}
+          ${this.renderGameStats()} ${this.innerHtml()}
         </div>
         <div class="mt-4 flex justify-between gap-2.5 shrink-0">
           <o-button
@@ -128,6 +143,107 @@ export class WinModal extends LitElement implements Controller {
     } else {
       return this.renderPatternButton();
     }
+  }
+
+  // Paratrooper summary for everyone who flew or shot planes down, plus the
+  // local player's full stats table.
+  private renderGameStats(): TemplateResult | typeof nothing {
+    const all = this.allStats;
+    if (all === null) return nothing;
+    const at = (values: readonly bigint[] | undefined, i: number) =>
+      Number(values?.[i] ?? 0n);
+    const rows = Object.entries(all)
+      .map(([clientID, stats]) => ({
+        name: this.game.playerByClientID(clientID)?.displayName() ?? clientID,
+        planes: stats?.planes,
+      }))
+      .filter((r) => r.planes?.some((v) => v > 0n))
+      .sort(
+        (a, b) =>
+          at(b.planes, PLANE_INDEX_TROOPS_LANDED) -
+          at(a.planes, PLANE_INDEX_TROOPS_LANDED),
+      );
+    const myClientID = this.game.myPlayer()?.clientID();
+    const mine = myClientID ? all[myClientID] : undefined;
+    const th = "px-2 py-1.5 text-center font-semibold text-gray-400";
+    const td = "px-2 py-1.5 text-center text-white/70";
+    return html`
+      ${rows.length === 0
+        ? nothing
+        : html`
+            <div class="mb-4 bg-black/30 p-2.5 rounded-sm">
+              <h3 class="text-lg font-semibold text-white mb-2 text-center">
+                ${translateText("player_stats_table.air_stats")}
+              </h3>
+              <div class="overflow-x-auto">
+                <table class="w-full text-sm text-gray-300">
+                  <thead>
+                    <tr class="bg-white/5">
+                      <th class="${th} text-left">
+                        ${translateText("win_modal.player")}
+                      </th>
+                      <th class="${th}">
+                        ${translateText("player_stats_table.sent")}
+                      </th>
+                      <th class="${th}">
+                        ${translateText("player_stats_table.landed")}
+                      </th>
+                      <th class="${th}">
+                        ${translateText("player_stats_table.shot_down")}
+                      </th>
+                      <th class="${th}">
+                        ${translateText("player_stats_table.downed")}
+                      </th>
+                      <th class="${th}">
+                        ${translateText("player_stats_table.troops_landed")}
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-white/5">
+                    ${rows.map(
+                      (r) => html`
+                        <tr>
+                          <td class="${td} text-left text-white/90">
+                            ${r.name}
+                          </td>
+                          <td class="${td}">
+                            ${renderNumber(at(r.planes, PLANE_INDEX_SENT))}
+                          </td>
+                          <td class="${td}">
+                            ${renderNumber(at(r.planes, PLANE_INDEX_LAND))}
+                          </td>
+                          <td class="${td}">
+                            ${renderNumber(at(r.planes, PLANE_INDEX_LOST))}
+                          </td>
+                          <td class="${td}">
+                            ${renderNumber(at(r.planes, PLANE_INDEX_DOWNED))}
+                          </td>
+                          <td class="${td}">
+                            ${renderTroops(
+                              at(r.planes, PLANE_INDEX_TROOPS_LANDED),
+                            )}
+                          </td>
+                        </tr>
+                      `,
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          `}
+      ${mine === undefined
+        ? nothing
+        : html`
+            <details class="mb-4 bg-black/30 p-2.5 rounded-sm">
+              <summary class="cursor-pointer text-white font-semibold">
+                ${translateText("win_modal.my_stats")}
+              </summary>
+              <div class="mt-3">
+                <player-stats-table .stats=${mine}></player-stats-table>
+              </div>
+            </details>
+          `}
+    `;
   }
 
   renderYoutubeTutorial() {
@@ -321,6 +437,7 @@ export class WinModal extends LitElement implements Controller {
     const updates = this.game.updatesSinceLastTick();
     const winUpdates = updates?.[GameUpdateType.Win] ?? [];
     winUpdates.forEach((wu) => {
+      this.allStats = wu.allPlayersStats;
       if (wu.winner === undefined) {
         // Match cancelled (e.g. a ranked 2v2 that didn't fill or fully
         // spawn): the game ends with no winner. Still vote the result to the

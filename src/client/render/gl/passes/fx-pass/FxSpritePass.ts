@@ -10,8 +10,10 @@ import type { Config } from "../../../../../core/configuration/Config";
 import type { ConquestFx, DeadUnitFx, RendererConfig } from "../../../types";
 import {
   STRUCTURE_TYPES,
+  UT_SAM_MISSILE,
   UT_SHELL,
   UT_TRAIN,
+  UT_TRANSPORT_PLANE,
   UT_WARSHIP,
 } from "../../../types";
 import { DynamicInstanceBuffer } from "../../DynamicBuffer";
@@ -367,7 +369,18 @@ export class FxSpritePass {
       return;
     }
 
-    if (typeName === UT_SHELL && unit.reachedTarget) {
+    // A transport plane dying short of its drop zone was shot down: same
+    // burst as a nuke caught by a SAM.
+    if (typeName === UT_TRANSPORT_PLANE && !unit.reachedTarget) {
+      this.pushFx(x, y, FX_SAM_EXPLOSION, now);
+      return;
+    }
+
+    // A SAM missile that reached the plane bursts there, hit or miss.
+    if (
+      (typeName === UT_SHELL || typeName === UT_SAM_MISSILE) &&
+      unit.reachedTarget
+    ) {
       this.pushFx(x, y, FX_MINI_EXPLOSION, now);
       return;
     }

@@ -1,5 +1,7 @@
 import { describe, expect, test } from "vitest";
 import {
+  buildPlaneRoute,
+  choosePlaneAirport,
   samThreatensNukePreview,
   shouldPreserveGhostAfterBuild,
 } from "../../../src/client/controllers/BuildPreviewController";
@@ -70,5 +72,77 @@ describe("samThreatensNukePreview (nuke trajectory threat set, #4226)", () => {
     expect(
       samThreatensNukePreview(7, teammates, new Set([7]), new Set([7])),
     ).toBe(false);
+  });
+});
+
+describe("paratrooper route preview", () => {
+  const range = 100;
+
+  test("a ready airport in range beats a closer one that is reloading", () => {
+    const route = choosePlaneAirport(
+      [
+        { x: 10, y: 0, ready: false },
+        { x: 60, y: 0, ready: true },
+      ],
+      0,
+      0,
+      range,
+    );
+    expect(route).toEqual({ srcX: 60, srcY: 0, state: "ready" });
+  });
+
+  test("the nearest ready airport in range is used", () => {
+    const route = choosePlaneAirport(
+      [
+        { x: 90, y: 0, ready: true },
+        { x: 30, y: 0, ready: true },
+      ],
+      0,
+      0,
+      range,
+    );
+    expect(route?.srcX).toBe(30);
+  });
+
+  test("reloading airports in range show as cooldown", () => {
+    const route = choosePlaneAirport(
+      [
+        { x: 50, y: 0, ready: false },
+        { x: 500, y: 0, ready: true },
+      ],
+      0,
+      0,
+      range,
+    );
+    expect(route).toEqual({ srcX: 50, srcY: 0, state: "cooldown" });
+  });
+
+  test("out of range falls back to the nearest airport", () => {
+    const route = choosePlaneAirport(
+      [
+        { x: 300, y: 0, ready: true },
+        { x: 200, y: 0, ready: true },
+      ],
+      0,
+      0,
+      range,
+    );
+    expect(route).toEqual({ srcX: 200, srcY: 0, state: "out_of_range" });
+    expect(choosePlaneAirport([], 0, 0, range)).toBeNull();
+  });
+
+  test("the line turns red where the plane can't go", () => {
+    const ready = { srcX: 0, srcY: 0, state: "ready" as const };
+    expect(buildPlaneRoute(ready, 50, 0, range, true).tSamIntercept).toBe(1);
+    expect(
+      buildPlaneRoute(ready, 50, 0, range, false).tSamIntercept,
+    ).toBeLessThan(1);
+    const far = { srcX: 0, srcY: 0, state: "out_of_range" as const };
+    expect(buildPlaneRoute(far, 200, 0, range, true).tSamIntercept).toBe(0.5);
+    const busy = { srcX: 0, srcY: 0, state: "cooldown" as const };
+    expect(buildPlaneRoute(busy, 50, 0, range, true).tSamIntercept).toBe(0);
+    // Straight line: control points on the segment.
+    const line = buildPlaneRoute(ready, 30, 60, range, true);
+    expect([line.p1x, line.p1y, line.p2x, line.p2y]).toEqual([10, 20, 20, 40]);
   });
 });

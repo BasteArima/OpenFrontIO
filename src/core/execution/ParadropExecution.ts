@@ -13,6 +13,13 @@ import { AirPathFinder } from "../pathfinding/PathFinder.Air";
 import { PseudoRandom } from "../PseudoRandom";
 import { AttackExecution } from "./AttackExecution";
 
+// A SAM missile chasing the plane. Whether it hits was rolled at launch; it
+// only plays out once the missile reaches the plane.
+interface Flak {
+  missile: Unit;
+  hit: boolean;
+}
+
 // Paratroopers: a transport plane takes off from the nearest ready airport,
 // flies straight to `dst` and drops its troops there, where they fight on as
 // a paradrop AttackExecution from a pocket inside enemy land. Hostile SAM
@@ -26,6 +33,7 @@ export class ParadropExecution implements Execution {
   private index = 0;
   // SAM launchers that have already fired at this plane.
   private firedSams = new Set<number>();
+  private flak: Flak[] = [];
   private random: PseudoRandom;
 
   constructor(
@@ -55,14 +63,15 @@ export class ParadropExecution implements Execution {
       return;
     }
     if (!this.plane.isActive()) {
-      this.active = false;
+      this.finish();
       return;
     }
     const speed = this.mg.config().transportPlaneSpeed();
     this.index = Math.min(this.index + speed, this.path.length - 1);
     const tile = this.path[this.index];
     this.plane.move(tile);
-    if (this.shotDown(tile)) {
+    this.fireSams(tile);
+    if (this.moveFlak(tile)) {
       return;
     }
     if (this.index === this.path.length - 1) {
@@ -97,6 +106,7 @@ export class ParadropExecution implements Execution {
       targetTile: this.dst,
     });
     airport?.launch();
+    mg.stats().planeSend(this.player, troops);
     this.random = new PseudoRandom(this.plane.id());
     this.path = new AirPathFinder(mg).findPath(src, this.dst) ?? [src];
     this.recordMotionPlan(ticks);
@@ -114,8 +124,9 @@ export class ParadropExecution implements Execution {
     }
   }
 
-  // Each hostile SAM launcher whose range the plane enters rolls once.
-  private shotDown(tile: TileRef): boolean {
+  // Each hostile SAM launcher whose range the plane enters fires once; the
+  // roll decides now whether that missile will bring the plane down.
+  private fireSams(tile: TileRef): void {
     const config = this.mg.config();
     const sams = this.mg.nearbyUnits(
       tile,
@@ -129,35 +140,88 @@ export class ParadropExecution implements Execution {
       const range = config.dynamicSamRange(sam, this.mg.ticks());
       if (distSquared > range * range) continue;
       this.firedSams.add(sam.id());
-      if (this.random.next() >= config.samFlakChance(sam.level())) continue;
-
-      const troops = this.plane!.troops();
-      this.plane!.delete(false, owner);
-      this.active = false;
-      this.mg.displayMessage(
-        "events_display.paradrop_shot_down",
-        MessageType.UNIT_DESTROYED,
-        this.player.id(),
-        undefined,
-        { troops: renderTroops(troops), name: owner.displayName() },
-      );
-      this.mg.displayMessage(
-        "events_display.paradrop_shot_down_enemy",
-        MessageType.SAM_HIT,
-        owner.id(),
-        undefined,
-        { troops: renderTroops(troops), name: this.player.displayName() },
-      );
-      return true;
+      const hit = this.random.next() < config.samFlakChance(sam.level());
+      const missile = owner.buildUnit(UnitType.SAMMissile, sam.tile(), {
+        targetUnit: this.plane!,
+      });
+      this.flak.push({ missile, hit });
     }
+  }
+
+  // Moves the missiles in flight toward the plane. Returns true when one of
+  // them brought it down.
+  private moveFlak(planeTile: TileRef): boolean {
+    const mg = this.mg;
+    const speed = mg.config().defaultSamMissileSpeed();
+    const px = mg.x(planeTile);
+    const py = mg.y(planeTile);
+    const inFlight: Flak[] = [];
+    for (const f of this.flak) {
+      if (!f.missile.isActive()) continue;
+      const mx = mg.x(f.missile.tile());
+      const my = mg.y(f.missile.tile());
+      const dx = px - mx;
+      const dy = py - my;
+      // sqrt is correctly rounded everywhere, unlike hypot.
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist > speed) {
+        const k = speed / dist;
+        f.missile.move(
+          mg.ref(Math.round(mx + dx * k), Math.round(my + dy * k)),
+        );
+        inFlight.push(f);
+        continue;
+      }
+      f.missile.move(planeTile);
+      f.missile.setReachedTarget();
+      f.missile.delete(false);
+      if (f.hit) {
+        this.flak = inFlight;
+        this.shootDown(f.missile.owner());
+        return true;
+      }
+    }
+    this.flak = inFlight;
     return false;
+  }
+
+  private shootDown(owner: Player): void {
+    const plane = this.plane!;
+    const troops = plane.troops();
+    plane.delete(false, owner);
+    this.finish();
+    this.mg.stats().planeShotDown(this.player, owner);
+    this.mg.displayMessage(
+      "events_display.paradrop_shot_down",
+      MessageType.UNIT_DESTROYED,
+      this.player.id(),
+      undefined,
+      { troops: renderTroops(troops), name: owner.displayName() },
+    );
+    this.mg.displayMessage(
+      "events_display.paradrop_shot_down_enemy",
+      MessageType.SAM_HIT,
+      owner.id(),
+      undefined,
+      { troops: renderTroops(troops), name: this.player.displayName() },
+    );
+  }
+
+  // Missiles still chasing the plane have nothing left to hit.
+  private finish(): void {
+    this.active = false;
+    for (const f of this.flak) {
+      if (f.missile.isActive()) f.missile.delete(false);
+    }
+    this.flak = [];
   }
 
   private land(): void {
     const plane = this.plane!;
     const troops = plane.troops();
+    plane.setReachedTarget();
     plane.delete(false);
-    this.active = false;
+    this.finish();
 
     const target: Player | TerraNullius = this.mg.owner(this.dst);
     const canDrop =
@@ -170,6 +234,7 @@ export class ParadropExecution implements Execution {
       this.player.addTroops(troops);
       return;
     }
+    this.mg.stats().planeLand(this.player, troops);
     this.mg.addExecution(
       new AttackExecution(
         troops,
