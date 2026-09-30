@@ -3,6 +3,33 @@ import { TileRef } from "../../game/GameMap";
 import { PseudoRandom } from "../../PseudoRandom";
 import { calculateBoundingBox } from "../../Util";
 
+/**
+ * Enemy structures worth landing paratroopers next to (and worth having in
+ * range of an airport).
+ */
+export const PARADROP_TARGET_STRUCTURES: readonly UnitType[] = [
+  UnitType.City,
+  UnitType.Factory,
+  UnitType.Port,
+  UnitType.MissileSilo,
+  UnitType.SAMLauncher,
+  UnitType.Airport,
+];
+
+/**
+ * Evenly thins `items` out to at most `max` elements (deterministic, keeps
+ * order). Used to bound per-tick work without consuming randomness.
+ */
+export function everyNth<T>(items: T[], max: number): T[] {
+  if (items.length <= max) return items;
+  const step = items.length / max;
+  const out: T[] = [];
+  for (let i = 0; i < max; i++) {
+    out.push(items[Math.floor(i * step)]);
+  }
+  return out;
+}
+
 export function randTerritoryTileArray(
   random: PseudoRandom,
   mg: Game,
