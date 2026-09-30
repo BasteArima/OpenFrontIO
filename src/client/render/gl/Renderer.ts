@@ -558,7 +558,12 @@ export class GPURenderer {
     this.rangeCirclePass = new RangeCirclePass(gl);
 
     // --- SAM radius overlay (dashed green circles during build mode) ---
-    this.samRadiusPass = new SAMRadiusPass(gl, mapW, this.settings);
+    this.samRadiusPass = new SAMRadiusPass(
+      gl,
+      mapW,
+      this.settings,
+      config.fighterInterceptRange(),
+    );
     this.samRadiusPass.setPaletteData(paletteData);
 
     // --- Crosshair (warship placement) ---
@@ -1090,6 +1095,10 @@ export class GPURenderer {
     );
     this.samGhostVisible =
       data !== null && SAM_RADIUS_GHOST_TYPES.has(data.ghostType);
+    // Hostile fighters can intercept the paratrooper plane too.
+    this.samRadiusPass.setInterceptZones(
+      data !== null && data.ghostType === "Transport Plane",
+    );
     this.samRadiusPass.setVisible(
       this.samGhostVisible || this.samHighlightVisible,
     );

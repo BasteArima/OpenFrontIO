@@ -496,6 +496,8 @@ export class GameView implements GameMap {
           (unit.state.ownerID !== update.ownerID ||
             unit.state.level !== update.level ||
             unit.state.isActive !== update.isActive ||
+            (unit.state.interceptDisabled ?? false) !==
+              (update.interceptDisabled ?? false) ||
             (unit.state.underConstruction &&
               !(update.underConstruction ?? false)))
         ) {
