@@ -157,7 +157,7 @@
   },
   "build_menu": {
     "desc": {
-      "airport": "Launches paratrooper planes within 300 tiles.",
+      "airport": "Launches paratrooper planes within 300 tiles and scrambles fighters at hostile planes within 150 (toggle in the radial menu).",
       "atom_bomb": "Small explosion",
       "city": "Increases max population",
       "defense_post": "Increases defenses of nearby borders",
@@ -1824,6 +1824,10 @@
   "radial_menu": {
     "delete_unit_description": "Click to delete the nearest unit",
     "delete_unit_title": "Delete Unit",
+    "intercept_off_description": "Fighters stay on the ground: the airport keeps its slots for your own paratroopers. Click to turn interception on.",
+    "intercept_off_title": "Fighter interception: off",
+    "intercept_on_description": "The airport scrambles a fighter (65% hit) at hostile transport planes within 150 tiles, using a launch slot. Click to turn it off.",
+    "intercept_on_title": "Fighter interception: on",
     "upgrade_x": "Upgrade x{amount}"
   },
   "relation": {

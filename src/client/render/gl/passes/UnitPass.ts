@@ -28,6 +28,7 @@
  *   Col 11: Train Carriage Loaded (5×5)
  *   Col 12–19: Transport Plane (13×13, paratroopers), one per heading:
  *              N, NE, E, SE, S, SW, W, NW (resolved in updateUnits())
+ *   Col 20–27: Fighter (13×13), one per heading, same order
  *
  * Data flow:
  *   FrameSnapshot.units → filter by typeToAtlasIdx → instance VBO → GPU
@@ -41,6 +42,7 @@ import {
   SMOOTHED_NUKE_TYPES,
   TrainType,
   UT_ATOM_BOMB,
+  UT_FIGHTER,
   UT_HYDROGEN_BOMB,
   UT_MIRV,
   UT_MIRV_WARHEAD,
@@ -98,6 +100,15 @@ const UNIT_ORDER = [
   "TransportPlaneSW",
   "TransportPlaneW",
   "TransportPlaneNW",
+  // Fighter headings, same order.
+  "FighterN",
+  "FighterNE",
+  "FighterE",
+  "FighterSE",
+  "FighterS",
+  "FighterSW",
+  "FighterW",
+  "FighterNW",
 ] as const;
 
 const ATLAS_COLS = UNIT_ORDER.length;
@@ -142,6 +153,8 @@ const TRAIN_CARRIAGE_COL = UNIT_ORDER.indexOf("TrainCarriage");
 const TRAIN_CARRIAGE_LOADED_COL = UNIT_ORDER.indexOf("TrainCarriageLoaded");
 /** First of the 8 transport plane heading columns (north). */
 const PLANE_FIRST_COL = UNIT_ORDER.indexOf("TransportPlaneN");
+/** First of the 8 fighter heading columns (north). */
+const FIGHTER_FIRST_COL = UNIT_ORDER.indexOf("FighterN");
 
 /** Heading of a transport plane as 0–7 (N, NE, … NW): towards its drop tile,
  *  or along its last step once there. */
@@ -172,6 +185,7 @@ const FLICKER_TYPES: ReadonlySet<string> = new Set([
  *  Ground/sea units (boats, trains) render below structures. */
 const MISSILE_TYPES: ReadonlySet<string> = new Set([
   UT_TRANSPORT_PLANE,
+  UT_FIGHTER,
   UT_ATOM_BOMB,
   UT_HYDROGEN_BOMB,
   UT_MIRV,
@@ -505,6 +519,11 @@ export class UnitPass {
 
       if (atlasIdx === undefined && unit.unitType === UT_TRANSPORT_PLANE) {
         atlasIdx = PLANE_FIRST_COL + planeHeading(unit, this.mapW);
+      }
+
+      // A fighter has no target tile, so it faces along its last step.
+      if (atlasIdx === undefined && unit.unitType === UT_FIGHTER) {
+        atlasIdx = FIGHTER_FIRST_COL + planeHeading(unit, this.mapW);
       }
 
       if (atlasIdx === undefined) continue;

@@ -264,10 +264,19 @@ export class NationParadropBehavior {
       airports.some(
         (a) => game.euclideanDistSquared(a.tile(), tile) <= rangeSquared,
       );
-    const hostileSams = game.units(UnitType.SAMLauncher).filter((sam) => {
-      const owner = sam.owner();
-      return owner !== this.player && !owner.isFriendly(this.player);
-    });
+    const hostile = (u: Unit) =>
+      u.owner() !== this.player && !u.owner().isFriendly(this.player);
+    const hostileSams = game.units(UnitType.SAMLauncher).filter(hostile);
+    // Airports that would scramble a fighter right now.
+    const hostileAirports = game
+      .units(UnitType.Airport)
+      .filter(
+        (a) =>
+          hostile(a) &&
+          a.interceptEnabled() &&
+          !a.isUnderConstruction() &&
+          !a.isInCooldown(),
+      );
     const ownBorder = everyNth(
       Array.from(this.player.borderTiles()),
       OWN_BORDER_SAMPLE_SIZE,
@@ -303,7 +312,12 @@ export class NationParadropBehavior {
         if (src === false) continue;
         const value = this.dropValue(tile, enemy, ownBorder);
         if (value < MIN_DROP_VALUE) continue;
-        const survival = this.flightSurvival(src, tile, hostileSams);
+        const survival = this.flightSurvival(
+          src,
+          tile,
+          hostileSams,
+          hostileAirports,
+        );
         if (survival < MIN_FLIGHT_SURVIVAL) continue;
         const score = value * survival;
         if (best === null || score > best.score) {
@@ -351,7 +365,12 @@ export class NationParadropBehavior {
    * down: product of (1 - flak chance) over hostile SAMs whose range the
    * flight line crosses (ParadropExecution gives each such SAM one roll).
    */
-  flightSurvival(src: TileRef, dst: TileRef, hostileSams: Unit[]): number {
+  flightSurvival(
+    src: TileRef,
+    dst: TileRef,
+    hostileSams: Unit[],
+    hostileAirports: Unit[] = [],
+  ): number {
     const game = this.game;
     const config = game.config();
     const ticks = game.ticks();
@@ -372,6 +391,19 @@ export class NationParadropBehavior {
       );
       if (d2 > range * range) continue;
       survival *= 1 - config.samFlakChance(sam.level());
+    }
+    const reach = config.fighterInterceptRange();
+    for (const airport of hostileAirports) {
+      const d2 = segmentDistSquared(
+        game.x(airport.tile()),
+        game.y(airport.tile()),
+        ax,
+        ay,
+        bx,
+        by,
+      );
+      if (d2 > reach * reach) continue;
+      survival *= 1 - config.fighterHitChance();
     }
     return survival;
   }

@@ -13,18 +13,22 @@ import { AirPathFinder } from "../pathfinding/PathFinder.Air";
 import { PseudoRandom } from "../PseudoRandom";
 import { AttackExecution } from "./AttackExecution";
 
-// A SAM missile chasing the plane. Whether it hits was rolled at launch; it
-// only plays out once the missile reaches the plane.
-interface Flak {
-  missile: Unit;
+// A SAM missile or a fighter chasing the plane. Whether it hits was rolled at
+// launch; it only plays out once the interceptor reaches the plane. Fighters
+// give up once `fuelUntil` passes; missiles chase until the plane is gone.
+interface Interceptor {
+  unit: Unit;
   hit: boolean;
+  speed: number;
+  fuelUntil: number | null;
 }
 
 // Paratroopers: a transport plane takes off from the nearest ready airport,
 // flies straight to `dst` and drops its troops there, where they fight on as
 // a paradrop AttackExecution from a pocket inside enemy land. Hostile SAM
-// launchers get one shot each at the plane as it passes through their range;
-// a downed plane takes its troops with it.
+// launchers get one shot each at the plane as it passes through their range,
+// and hostile airports with interception on scramble one fighter each; a
+// downed plane takes its troops with it.
 export class ParadropExecution implements Execution {
   private active = true;
   private mg: Game;
@@ -33,7 +37,9 @@ export class ParadropExecution implements Execution {
   private index = 0;
   // SAM launchers that have already fired at this plane.
   private firedSams = new Set<number>();
-  private flak: Flak[] = [];
+  // Airports that have already scrambled a fighter at this plane.
+  private scrambled = new Set<number>();
+  private interceptors: Interceptor[] = [];
   private random: PseudoRandom;
 
   constructor(
@@ -71,7 +77,8 @@ export class ParadropExecution implements Execution {
     const tile = this.path[this.index];
     this.plane.move(tile);
     this.fireSams(tile);
-    if (this.moveFlak(tile)) {
+    this.scrambleFighters(tile, ticks);
+    if (this.moveInterceptors(tile, ticks)) {
       return;
     }
     if (this.index === this.path.length - 1) {
@@ -144,44 +151,89 @@ export class ParadropExecution implements Execution {
       const missile = owner.buildUnit(UnitType.SAMMissile, sam.tile(), {
         targetUnit: this.plane!,
       });
-      this.flak.push({ missile, hit });
+      this.interceptors.push({
+        unit: missile,
+        hit,
+        speed: config.defaultSamMissileSpeed(),
+        fuelUntil: null,
+      });
     }
   }
 
-  // Moves the missiles in flight toward the plane. Returns true when one of
-  // them brought it down.
-  private moveFlak(planeTile: TileRef): boolean {
+  // Each hostile airport with interception on and a free slot scrambles one
+  // fighter once the plane is within reach. The sortie uses the slot like a
+  // paradrop does.
+  private scrambleFighters(tile: TileRef, ticks: number): void {
+    const config = this.mg.config();
+    if (config.isUnitDisabled(UnitType.Fighter)) return;
+    const airports = this.mg.nearbyUnits(
+      tile,
+      config.fighterInterceptRange(),
+      UnitType.Airport,
+    );
+    for (const { unit: airport } of airports) {
+      if (this.scrambled.has(airport.id())) continue;
+      const owner = airport.owner();
+      if (owner === this.player || owner.isFriendly(this.player)) continue;
+      if (
+        !airport.isActive() ||
+        airport.isUnderConstruction() ||
+        airport.isInCooldown() ||
+        !airport.interceptEnabled()
+      ) {
+        continue;
+      }
+      this.scrambled.add(airport.id());
+      airport.launch();
+      const hit = this.random.next() < config.fighterHitChance();
+      const fighter = owner.buildUnit(UnitType.Fighter, airport.tile(), {
+        targetUnit: this.plane!,
+      });
+      this.interceptors.push({
+        unit: fighter,
+        hit,
+        speed: config.fighterSpeed(),
+        fuelUntil: ticks + config.fighterFuelTicks(),
+      });
+    }
+  }
+
+  // Moves the interceptors in flight toward the plane. Returns true when one
+  // of them brought it down.
+  private moveInterceptors(planeTile: TileRef, ticks: number): boolean {
     const mg = this.mg;
-    const speed = mg.config().defaultSamMissileSpeed();
     const px = mg.x(planeTile);
     const py = mg.y(planeTile);
-    const inFlight: Flak[] = [];
-    for (const f of this.flak) {
-      if (!f.missile.isActive()) continue;
-      const mx = mg.x(f.missile.tile());
-      const my = mg.y(f.missile.tile());
+    const inFlight: Interceptor[] = [];
+    for (const f of this.interceptors) {
+      if (!f.unit.isActive()) continue;
+      if (f.fuelUntil !== null && ticks > f.fuelUntil) {
+        // Out of fuel: turns back without a shot.
+        f.unit.delete(false);
+        continue;
+      }
+      const mx = mg.x(f.unit.tile());
+      const my = mg.y(f.unit.tile());
       const dx = px - mx;
       const dy = py - my;
       // sqrt is correctly rounded everywhere, unlike hypot.
       const dist = Math.sqrt(dx * dx + dy * dy);
-      if (dist > speed) {
-        const k = speed / dist;
-        f.missile.move(
-          mg.ref(Math.round(mx + dx * k), Math.round(my + dy * k)),
-        );
+      if (dist > f.speed) {
+        const k = f.speed / dist;
+        f.unit.move(mg.ref(Math.round(mx + dx * k), Math.round(my + dy * k)));
         inFlight.push(f);
         continue;
       }
-      f.missile.move(planeTile);
-      f.missile.setReachedTarget();
-      f.missile.delete(false);
+      f.unit.move(planeTile);
+      f.unit.setReachedTarget();
+      f.unit.delete(false);
       if (f.hit) {
-        this.flak = inFlight;
-        this.shootDown(f.missile.owner());
+        this.interceptors = inFlight;
+        this.shootDown(f.unit.owner());
         return true;
       }
     }
-    this.flak = inFlight;
+    this.interceptors = inFlight;
     return false;
   }
 
@@ -207,13 +259,13 @@ export class ParadropExecution implements Execution {
     );
   }
 
-  // Missiles still chasing the plane have nothing left to hit.
+  // Interceptors still chasing the plane have nothing left to hit.
   private finish(): void {
     this.active = false;
-    for (const f of this.flak) {
-      if (f.missile.isActive()) f.missile.delete(false);
+    for (const f of this.interceptors) {
+      if (f.unit.isActive()) f.unit.delete(false);
     }
-    this.flak = [];
+    this.interceptors = [];
   }
 
   private land(): void {

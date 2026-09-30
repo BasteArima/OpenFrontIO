@@ -227,6 +227,17 @@ describe("NationParadropBehavior", () => {
     expect(tryDrops(s, newBehavior(s), 60)).toHaveLength(0);
   });
 
+  test("a hostile airport ready to scramble fighters keeps the nation home", async () => {
+    const s = await newGame(Difficulty.Hard);
+    constructionExecution(s.game, s.human, 90, 50, UnitType.Airport);
+    const airport = s.human.units(UnitType.Airport)[0];
+    expect(tryDrops(s, newBehavior(s), 60)).toHaveLength(0);
+
+    // With interception off the same airport is no threat.
+    airport.setInterceptEnabled(false);
+    expect(tryDrops(s, newBehavior(s))).toHaveLength(1);
+  });
+
   test("prefers an unprotected city over one under a hostile SAM", async () => {
     const s = await newGame(Difficulty.Hard, LocalFlak);
     constructionExecution(s.game, s.human, 80, 15, UnitType.City);

@@ -95,6 +95,7 @@ describe("RadialMenuElements", () => {
       isPlayer: vi.fn(() => true),
       isTraitor: vi.fn(() => false),
       isDisconnected: vi.fn(() => false),
+      units: vi.fn(() => []),
     } as unknown as PlayerView;
 
     mockGame = {
@@ -335,6 +336,33 @@ describe("RadialMenuElements", () => {
       expect(buildMenu).toBeDefined();
       expect(attackMenu).toBeUndefined();
       expect(deleteMenu).toBeDefined();
+    });
+
+    it("offers the intercept toggle only next to an own airport", () => {
+      const noAirport = rootMenuElement.subMenu!(mockParams);
+      expect(
+        noAirport.find((i) => i.id === "airport_intercept"),
+      ).toBeUndefined();
+
+      const airport = {
+        id: () => 42,
+        tile: () => 0,
+        isUnderConstruction: () => false,
+        interceptEnabled: () => true,
+      };
+      (mockPlayer as any).units = vi.fn(() => [airport]);
+      mockGame.manhattanDist = vi.fn(() => 1);
+      const emitted: unknown[] = [];
+      mockParams.eventBus = { emit: (e: unknown) => emitted.push(e) } as any;
+
+      const toggle = rootMenuElement.subMenu!(mockParams).find(
+        (i) => i.id === "airport_intercept",
+      );
+      expect(toggle).toBeDefined();
+      toggle!.action!(mockParams);
+      expect(emitted).toEqual([
+        expect.objectContaining({ unitId: 42, enabled: false }),
+      ]);
     });
 
     it("should show attack and boat menu on enemy territory", () => {

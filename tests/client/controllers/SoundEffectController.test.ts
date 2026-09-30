@@ -112,6 +112,30 @@ describe("SoundEffectController", () => {
       expect(played).toEqual([]);
     });
 
+    it("plays the scramble cue for a fighter chasing my plane", () => {
+      const myPlane = plane(true, false, me);
+      units = new Map([[7, myPlane]]);
+      const fighter = {
+        id: () => 8,
+        type: () => UnitType.Fighter,
+        isActive: () => true,
+        reachedTarget: () => false,
+        createdAt: () => tick,
+        owner: () => ({}),
+        targetUnitId: () => 7,
+      };
+      tick++;
+      units = new Map<number, any>([
+        [7, myPlane],
+        [8, fighter],
+      ]);
+      game.updatesSinceLastTick = () => ({
+        [GameUpdateType.Unit]: [{ id: 8 }],
+      });
+      controller.tick();
+      expect(played).toEqual(["fighter-scramble"]);
+    });
+
     it("warns me of a plane headed for my land", () => {
       game.owner = () => me;
       tickWithUnits(plane(true, false, {}));
