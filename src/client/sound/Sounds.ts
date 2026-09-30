@@ -29,6 +29,10 @@ export type SoundEffect =
   | "build-factory"
   | "build-train-station"
   | "transport-ship"
+  | "plane-launch"
+  | "paradrop-land"
+  | "sam-shoot"
+  | "sam-hit"
   | "nuke-warning"
   | "spawn"
   | "game-start"
@@ -64,6 +68,10 @@ export const soundEffectUrls: ReadonlyMap<SoundEffect, string> = new Map([
   ["build-factory", assetUrl("sounds/effects/build-factory.mp3")],
   ["build-train-station", assetUrl("sounds/effects/build-train-station.mp3")],
   ["transport-ship", assetUrl("sounds/effects/transport-ship.mp3")],
+  ["plane-launch", assetUrl("sounds/effects/plane-launch.mp3")],
+  ["paradrop-land", assetUrl("sounds/effects/paradrop-land.mp3")],
+  ["sam-shoot", assetUrl("sounds/effects/sam-shoot.mp3")],
+  ["sam-hit", assetUrl("sounds/effects/sam-hit.mp3")],
   ["nuke-warning", assetUrl("sounds/effects/nuke-warning.mp3")],
   ["spawn", assetUrl("sounds/effects/spawn.mp3")],
   ["game-start", assetUrl("sounds/effects/game-start.mp3")],
@@ -125,6 +133,10 @@ const CUE_CATEGORY: Record<SoundEffect, Exclude<CueCategory, "ambience">> = {
   "sam-built": "effects",
   "silo-built": "effects",
   "transport-ship": "effects",
+  "plane-launch": "effects",
+  "paradrop-land": "effects",
+  "sam-shoot": "effects",
+  "sam-hit": "effects",
   spawn: "effects",
   "game-start": "effects",
   victory: "effects",

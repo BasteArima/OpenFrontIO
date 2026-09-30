@@ -1,6 +1,7 @@
 import { LitElement, html, nothing, type TemplateResult } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import {
+  PLANE_INDEX_TROOPS_SENT,
   PlayerStats,
   boatUnits,
   bombUnits,
@@ -20,6 +21,7 @@ const BUILDING_ORDER = {
   defp: 4,
   silo: 5,
   saml: 6,
+  airp: 7,
 } as const satisfies Record<
   Exclude<(typeof otherUnits)[number], "wshp">,
   number
@@ -40,6 +42,7 @@ const UNIT_LABEL_KEYS = {
   fact: "unit_type.factory",
   port: "unit_type.port",
   saml: "unit_type.sam_launcher",
+  airp: "unit_type.airport",
   silo: "unit_type.missile_silo",
   wshp: "unit_type.warship",
   abomb: "unit_type.atom_bomb",
@@ -138,6 +141,16 @@ const UNIT_COLUMNS = [
   "player_stats_table.lost",
 ] as const;
 
+// In PLANE_INDEX_* order (StatsSchemas.ts).
+export const AIR_COLUMNS = [
+  "player_stats_table.sent",
+  "player_stats_table.landed",
+  "player_stats_table.shot_down",
+  "player_stats_table.downed",
+  "player_stats_table.troops_sent",
+  "player_stats_table.troops_landed",
+] as const;
+
 @customElement("player-stats-table")
 export class PlayerStatsTable extends LitElement {
   createRenderRoot() {
@@ -202,6 +215,17 @@ export class PlayerStatsTable extends LitElement {
           })),
           "player_stats_table.weapon",
         )}
+        <!-- Shot down counts this player's planes lost to SAMs; Downed counts
+        enemy planes their own SAMs brought down. -->
+        ${statsSection("player_stats_table.air_stats", AIR_COLUMNS, [
+          {
+            // Troop slots are stored in sim units; show them the way the
+            // game does (renderTroops divides by 10).
+            values: slots(stats?.planes, AIR_COLUMNS.length).map((v, i) =>
+              i >= PLANE_INDEX_TROOPS_SENT ? v / 10n : v,
+            ),
+          },
+        ])}
         ${statsSection(
           "player_stats_table.attack_stats",
           [

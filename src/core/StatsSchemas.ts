@@ -36,6 +36,7 @@ export const otherUnits = [
   "silo",
   "saml",
   "fact",
+  "airp",
 ] as const;
 export const OtherUnitSchema = z.enum(otherUnits);
 export type OtherUnit = z.infer<typeof OtherUnitSchema>;
@@ -46,7 +47,8 @@ export type OtherUnitType =
   | UnitType.Port
   | UnitType.SAMLauncher
   | UnitType.Warship
-  | UnitType.Factory;
+  | UnitType.Factory
+  | UnitType.Airport;
 
 export const unitTypeToOtherUnit = {
   [UnitType.City]: "city",
@@ -56,6 +58,7 @@ export const unitTypeToOtherUnit = {
   [UnitType.SAMLauncher]: "saml",
   [UnitType.Warship]: "wshp",
   [UnitType.Factory]: "fact",
+  [UnitType.Airport]: "airp",
 } as const satisfies Record<OtherUnitType, OtherUnit>;
 
 // Attacks
@@ -102,6 +105,14 @@ export const BOAT_INDEX_LOST = 4; // Own boats destroyed, whoever destroyed them
 export const BOMB_INDEX_LAUNCH = 0; // Bombs launched
 export const BOMB_INDEX_LAND = 1; // Bombs landed
 export const BOMB_INDEX_INTERCEPT = 2; // Bombs intercepted
+
+// Transport planes (paratroopers)
+export const PLANE_INDEX_SENT = 0; // Planes launched
+export const PLANE_INDEX_LAND = 1; // Planes that dropped their troops
+export const PLANE_INDEX_LOST = 2; // Own planes shot down
+export const PLANE_INDEX_DOWNED = 3; // Enemy planes shot down by own SAMs
+export const PLANE_INDEX_TROOPS_SENT = 4; // Troops loaded onto planes
+export const PLANE_INDEX_TROOPS_LANDED = 5; // Troops dropped behind enemy lines
 
 // Gold
 export const GOLD_INDEX_WORK = 0; // Gold earned by workers
@@ -192,6 +203,7 @@ export const PlayerStatsSchema = z
     alliances: AtLeastOneNumberSchema.optional(),
     peakTroops: BigIntStringSchema.optional(),
     donations: AtLeastOneNumberSchema.optional(),
+    planes: AtLeastOneNumberSchema.optional(),
   })
   .optional();
 export type PlayerStats = z.infer<typeof PlayerStatsSchema>;

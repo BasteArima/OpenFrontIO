@@ -32,6 +32,18 @@ const STATION_CAPABLE_TYPES = new Set<UnitType>([
   UnitType.Port,
 ]);
 
+// A salvo of SAMs can open up on the same tick; one launch cue and one hit cue
+// per interval is plenty.
+const SAM_SOUND_INTERVAL_TICKS = 5;
+
+// Units a SAM can bring down: seen dying short of their target.
+const INTERCEPTABLE_TYPES = new Set<UnitType>([
+  UnitType.AtomBomb,
+  UnitType.HydrogenBomb,
+  UnitType.MIRVWarhead,
+  UnitType.TransportPlane,
+]);
+
 const NUKE_INBOUND_MESSAGES = new Set<MessageType>([
   MessageType.NUKE_INBOUND,
   MessageType.HYDROGEN_BOMB_INBOUND,
@@ -42,6 +54,8 @@ export class SoundEffectController implements Controller {
   private lastMirvHitSoundTick = -Infinity;
   private lastNukeWarningSoundTick = -Infinity;
   private lastTrainStationSoundTick = -Infinity;
+  private lastSamShootSoundTick = -Infinity;
+  private lastSamHitSoundTick = -Infinity;
   // A train station is a flag on an existing structure, not a unit — play the
   // build sound on the false→true edge only, so structures that already have
   // one when first seen (e.g. joining mid-game) stay silent.
@@ -117,7 +131,23 @@ export class SoundEffectController implements Controller {
     if (STATION_CAPABLE_TYPES.has(unit.type())) {
       this.handleTrainStation(unit);
     }
+    if (
+      INTERCEPTABLE_TYPES.has(unit.type()) &&
+      !unit.isActive() &&
+      !unit.reachedTarget()
+    ) {
+      this.onIntercepted(unit);
+    }
     switch (unit.type()) {
+      case UnitType.TransportPlane:
+        if (
+          !unit.isActive() &&
+          unit.reachedTarget() &&
+          this.concernsMe(unit, "here")
+        ) {
+          this.emit("paradrop-land");
+        }
+        break;
       case UnitType.AtomBomb:
         this.onNukeDetonation(unit, "atom-hit");
         break;
@@ -128,6 +158,41 @@ export class SoundEffectController implements Controller {
         this.onNukeDetonation(unit, "hydrogen-hit");
         break;
     }
+  }
+
+  // True when the unit is mine or the tile it is at (or, for "target", headed
+  // for) lies in my territory: SAM fire and paratroopers are local events,
+  // not a map-wide broadcast like a nuke.
+  private concernsMe(unit: UnitView, where: "here" | "target"): boolean {
+    const myPlayer = this.game.myPlayer();
+    if (myPlayer === null) return false;
+    if (unit.owner() === myPlayer) return true;
+    const tile = where === "here" ? unit.tile() : unit.targetTile();
+    return tile !== undefined && this.game.owner(tile) === myPlayer;
+  }
+
+  private onIntercepted(unit: UnitView): void {
+    if (!this.concernsMe(unit, "here")) return;
+    const tick = this.game.ticks();
+    if (tick - this.lastSamHitSoundTick < SAM_SOUND_INTERVAL_TICKS) return;
+    this.lastSamHitSoundTick = tick;
+    this.emit("sam-hit");
+  }
+
+  private onSamLaunch(unit: UnitView): void {
+    const targetId = unit.targetUnitId();
+    const target = targetId !== undefined ? this.game.unit(targetId) : null;
+    const myPlayer = this.game.myPlayer();
+    if (
+      myPlayer === null ||
+      (unit.owner() !== myPlayer && target?.owner() !== myPlayer)
+    ) {
+      return;
+    }
+    const tick = this.game.ticks();
+    if (tick - this.lastSamShootSoundTick < SAM_SOUND_INTERVAL_TICKS) return;
+    this.lastSamShootSoundTick = tick;
+    this.emit("sam-shoot");
   }
 
   private onMirvWarheadDetonation(unit: UnitView): void {
@@ -176,6 +241,15 @@ export class SoundEffectController implements Controller {
         break;
       case UnitType.TransportShip:
         if (unit.owner() === myPlayer) this.emit("transport-ship");
+        break;
+      case UnitType.TransportPlane:
+        // The launcher hears the take-off; the target hears it coming.
+        if (this.concernsMe(unit, "target")) {
+          this.emit("plane-launch");
+        }
+        break;
+      case UnitType.SAMMissile:
+        this.onSamLaunch(unit);
         break;
     }
   }
