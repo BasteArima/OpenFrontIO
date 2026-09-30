@@ -11,10 +11,14 @@
  *   self  → green  (0, 1, 0)
  *   ally  → yellow (1, 1, 0)
  *   enemy → red    (1, 0, 0)
+ *
+ * While aiming paratroopers it also shows the fighter interception zones of
+ * hostile airports, in orange-red so they don't read as SAM coverage; faint
+ * while the airport is reloading, hidden when its interception is off.
  */
 
 import type { UnitState } from "../../types";
-import { UT_SAM_LAUNCHER } from "../../types";
+import { UT_AIRPORT, UT_SAM_LAUNCHER } from "../../types";
 import { DynamicInstanceBuffer } from "../DynamicBuffer";
 import type { RenderSettings } from "../RenderSettings";
 import { createProgram } from "../utils/GlUtils";
@@ -34,6 +38,11 @@ const FLOATS_PER_INSTANCE = 10;
 const COLOR_SELF = [0, 1, 0]; // green
 const COLOR_ALLY = [1, 1, 0]; // yellow
 const COLOR_ENEMY = [1, 0, 0]; // red
+const COLOR_INTERCEPT = [1, 0.45, 0.1]; // orange-red: hostile fighter zones
+
+// Bucket of the interception zones, kept apart from the SAM groups so the
+// two kinds of circle never merge into one outline.
+const INTERCEPT_GROUP = -1;
 
 interface SAMCircle {
   x: number;
@@ -177,6 +186,8 @@ export class SAMRadiusPass {
   private static readonly GEOMETRY_REFRESH_INTERVAL_MS = 50; // 20Hz refresh rate
   private dirtyGroups: Set<number> = new Set();
   private readonly colorScratch: number[] = [0, 0, 0];
+  private showIntercept = false;
+  private readonly interceptBucket: SAMCircle[] = [];
 
   // Owner-color mode fields
   private paletteData: Float32Array | null = null;
@@ -188,6 +199,7 @@ export class SAMRadiusPass {
     gl: WebGL2RenderingContext,
     mapW: number,
     settings: RenderSettings,
+    private readonly interceptRange: number = 0,
   ) {
     this.gl = gl;
     this.mapW = mapW;
@@ -279,6 +291,13 @@ export class SAMRadiusPass {
     this.rebuild();
   }
 
+  /** Show hostile airports' fighter zones (while aiming paratroopers). */
+  setInterceptZones(show: boolean): void {
+    if (show === this.showIntercept) return;
+    this.showIntercept = show;
+    this.rebuild();
+  }
+
   setAllianceClusters(clusters: Map<number, number>): void {
     this.allianceClusters = clusters;
   }
@@ -287,7 +306,9 @@ export class SAMRadiusPass {
     if (tick === this.currentTick) return;
     this.currentTick = tick;
     this.lastTickTime = performance.now();
-    if (this.hasUpgradingSAM) {
+    // Airport reloads don't mark structures dirty, so refresh the fighter
+    // zones every tick while they are shown.
+    if (this.hasUpgradingSAM || this.showIntercept) {
       this.rebuild();
     }
   }
@@ -392,7 +413,37 @@ export class SAMRadiusPass {
         this.dirtyGroups.has(bg),
       );
     }
+    if (this.showIntercept && this.interceptRange > 0) {
+      this.pushInterceptCircles(circles, structures);
+    }
     return circles;
+  }
+
+  private pushInterceptCircles(
+    circles: SAMCircle[],
+    structures: Map<number, UnitState>,
+  ): void {
+    const w = this.mapW;
+    for (const u of structures.values()) {
+      if (u.unitType !== UT_AIRPORT || !u.isActive) continue;
+      if (u.underConstruction || u.interceptDisabled) continue;
+      if (u.ownerID === this.localPlayerID || this.allies.has(u.ownerID)) {
+        continue;
+      }
+      const reloading = u.missileTimerQueue.length >= u.level;
+      const x = u.pos % w;
+      circles.push({
+        x,
+        y: (u.pos - x) / w,
+        radius: this.interceptRange,
+        r: COLOR_INTERCEPT[0],
+        g: COLOR_INTERCEPT[1],
+        b: COLOR_INTERCEPT[2],
+        alpha: reloading ? 0.35 : 1.0,
+        group: INTERCEPT_GROUP,
+        spin: 1.0,
+      });
+    }
   }
 
   private pushSAMCircles(
@@ -482,8 +533,13 @@ export class SAMRadiusPass {
       if (bucket) bucket.length = 0;
     }
 
+    this.interceptBucket.length = 0;
     for (let i = 0; i < circles.length; i++) {
       const c = circles[i];
+      if (c.group === INTERCEPT_GROUP) {
+        this.interceptBucket.push(c);
+        continue;
+      }
       let bucket = this.groupBuckets[c.group];
       if (!bucket) {
         bucket = [];
@@ -493,8 +549,11 @@ export class SAMRadiusPass {
     }
 
     let count = 0;
-    for (let g = 0; g < this.groupBuckets.length; g++) {
-      const groupCircles = this.groupBuckets[g];
+    for (let g = 0; g <= this.groupBuckets.length; g++) {
+      const groupCircles =
+        g < this.groupBuckets.length
+          ? this.groupBuckets[g]
+          : this.interceptBucket;
       if (!groupCircles || groupCircles.length === 0) continue;
 
       for (let i = 0; i < groupCircles.length; i++) {
