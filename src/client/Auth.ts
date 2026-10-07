@@ -522,6 +522,14 @@ async function doRefreshJwt(): Promise<void> {
       credentials: "include",
       signal: AbortSignal.timeout(10_000),
     });
+    if (response.status === 404) {
+      // No auth service behind this API (self-hosted server): same as an
+      // unreachable one. logOut() would also wipe the persistent ID, so the
+      // player would come back as someone else on every refresh and lose
+      // ownership of the lobby they created.
+      __jwt = null;
+      return;
+    }
     if (response.status !== 200) {
       console.error("Refresh failed", response);
       logOut();
