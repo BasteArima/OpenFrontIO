@@ -89,7 +89,7 @@ export class WinModal extends LitElement implements Controller {
           ${this._title || ""}
         </h2>
         <div class="min-h-0 flex-1 overflow-y-auto pr-0.5">
-          ${this.renderGameStats()} ${this.innerHtml()}
+          ${this.renderGameStats()}
         </div>
         <div class="mt-4 flex justify-between gap-2.5 shrink-0">
           <o-button
@@ -381,13 +381,6 @@ export class WinModal extends LitElement implements Controller {
     this.isRankedGame =
       this.game.config().gameConfig().rankedType !== undefined;
     this.isVisible = true;
-    this.requestUpdate();
-    try {
-      await this.loadPatternContent();
-    } catch (error) {
-      console.warn("Failed to load win modal cosmetics", error);
-      return;
-    }
     this.requestUpdate();
   }
 

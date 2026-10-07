@@ -286,6 +286,14 @@ app.get("/api/health", (_req, res) => {
   }
 });
 
+// Self-hosted: there is no account/shop API. Clients built with
+// API_DOMAIN=<this host>/_api get an immediate 404 here, which the server-list
+// heartbeat counts as a reachable backend with no list (so multiplayer stays
+// enabled) and every other API call treats as "nothing there".
+app.use("/_api", (_req, res) => {
+  res.status(404).json({ error: "no account API on this server" });
+});
+
 // SPA fallback route
 app.get("/{*splat}", async function (_req, res) {
   try {

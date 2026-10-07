@@ -49,6 +49,11 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          build-args: GIT_COMMIT=${{ steps.commit.outputs.short }}
+          # No account API here: the client's reachability probe and API
+          # calls go to the server's own /_api (a quick 404) instead of
+          # http://localhost:8787 on the player's machine.
+          build-args: |
+            GIT_COMMIT=${{ steps.commit.outputs.short }}
+            API_DOMAIN=openfront.baste.ru/_api
           cache-from: type=gha
           cache-to: type=gha,mode=max

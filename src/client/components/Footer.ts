@@ -44,7 +44,7 @@ export class Footer extends LitElement {
             class="flex items-center justify-center gap-4 lg:gap-6 pt-2 w-full relative"
           >
             <a
-              href="https://github.com/openfrontio/OpenFrontIO"
+              href="https://github.com/BasteArima/OpenFrontIO"
               target="_blank"
               rel="noopener noreferrer"
               class="opacity-60 hover:opacity-100 hover:scale-110 transition-all"
@@ -132,12 +132,7 @@ export class Footer extends LitElement {
              is no room for it here. -->
         <div
           class="hidden lg:flex lg:col-start-3 lg:items-center lg:justify-end lg:pt-2 lg:pr-20"
-        >
-          <steam-wishlist-button
-            campaign="home_desktop"
-            class="min-w-0 flex-1 max-w-[544px]"
-          ></steam-wishlist-button>
-        </div>
+        ></div>
 
         <!-- Single instance: translateText() resolves the active language via
              document.querySelector("lang-selector"), so a second one would

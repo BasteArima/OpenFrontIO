@@ -32,6 +32,10 @@ COPY scripts ./scripts
 
 ARG GIT_COMMIT=unknown
 ENV GIT_COMMIT="$GIT_COMMIT"
+# Account/shop API origin baked into the client (getApiBase). Self-hosted
+# builds point it at their own /_api, which answers 404 at once.
+ARG API_DOMAIN=
+ENV API_DOMAIN="$API_DOMAIN"
 RUN npm run build-prod
 
 # Production dependencies stage - separate from build
