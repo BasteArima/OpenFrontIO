@@ -399,6 +399,13 @@ export async function startWorker() {
     res.status(204).end();
   });
 
+  // Self-host: players connected to this worker's games and lobbies (not
+  // the lobby browser). The host's auto-updater holds a redeploy while this
+  // is above zero, since a restart drops every game in progress.
+  app.get("/api/selfhost/activity", (_req, res) => {
+    res.json({ players: gm.activeClients() });
+  });
+
   app.get("/api/game/:id/exists", async (req, res) => {
     const lobbyId = req.params.id;
     res.json({
