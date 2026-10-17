@@ -87,6 +87,9 @@ COPY resources ./resources
 
 # Remove maps because they are not used by the server.
 RUN rm -rf ./resources/maps
+# Self-hosted player uploads (SELFHOST_UPLOADS_DIR, mounted as a volume). The
+# server runs as `node`; a fresh named volume takes this directory's owner.
+RUN mkdir -p /data/uploads && chown node:node /data/uploads
 COPY tsconfig.json ./
 COPY client-api.json ./
 COPY src ./src
