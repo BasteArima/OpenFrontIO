@@ -52,7 +52,7 @@ import { RailroadPass } from "./passes/RailroadPass";
 import { RangeCirclePass } from "./passes/RangeCirclePass";
 import { SAMRadiusPass } from "./passes/SamRadiusPass";
 import { SelectionBoxPass } from "./passes/SelectionBoxPass";
-import { SkinAtlasArray } from "./passes/SkinAtlasArray";
+import { SKIN_DIM, SkinAtlasArray } from "./passes/SkinAtlasArray";
 import { SmallPlayerGlowPass } from "./passes/SmallPlayerGlowPass";
 import type { SpawnCenter } from "./passes/SpawnOverlayPass";
 import { SpawnOverlayPass } from "./passes/SpawnOverlayPass";
@@ -85,6 +85,7 @@ import {
   type GPUResources,
 } from "./utils/GpuResources";
 import { HeatManager } from "./utils/HeatManager";
+import { SkinDisplaySetting, skinPlacement } from "./utils/SkinPlacement";
 
 /** Ghost types that trigger SAM radius overlay (matches upstream SAMRadiusLayer). */
 const SAM_RADIUS_GHOST_TYPES = new Set([
@@ -177,8 +178,22 @@ export class GPURenderer {
   /** CPU-side mirror of skinLayerTex (0 = no skin, otherwise layer + 1). */
   private skinLayerCpu: Uint8Array;
   /** Per-player anchor (x,y) for skin sampling. (0,0) = world-origin anchor. */
+  /** Per-player skin placement, 2 RGBA32F texels each (SkinPlacement.ts). */
   private skinAnchorTex: WebGLTexture;
-  private skinAnchorCpu: Uint16Array;
+  private skinAnchorCpu: Float32Array;
+  private readonly skinState = new Map<
+    number,
+    {
+      url: string | null;
+      display: SkinDisplaySetting | undefined;
+      spawn: { x: number; y: number } | null;
+      center: { x: number; y: number } | null;
+    }
+  >();
+  private readonly skinImageSize = new Map<
+    string,
+    { width: number; height: number }
+  >();
   private canvas: HTMLCanvasElement;
   private settings: RenderSettings;
   private sceneTarget: RenderTarget;
@@ -358,15 +373,19 @@ export class GPURenderer {
       data: this.skinLayerCpu,
       filter: gl.NEAREST,
     });
-    // Per-player skin anchor: RG16UI, 2× uint16 per player → 4 bytes each.
-    // (0,0) sentinel means "no anchor" — shader uses world origin.
-    this.skinAnchorCpu = new Uint16Array(palW * 2);
+    // Per-player skin placement: 2 RGBA32F texels per player (anchor, mode,
+    // scale; see utils/SkinPlacement.ts). Zero anchor = world origin.
+    this.skinAnchorCpu = new Float32Array(palW * 8);
+    for (let i = 0; i < palW; i++) {
+      this.skinAnchorCpu[i * 8 + 4] = 1;
+      this.skinAnchorCpu[i * 8 + 5] = 1;
+    }
     this.skinAnchorTex = createTexture2D(gl, {
-      width: palW,
+      width: palW * 2,
       height: 1,
-      internalFormat: gl.RG16UI,
-      format: gl.RG_INTEGER,
-      type: gl.UNSIGNED_SHORT,
+      internalFormat: gl.RGBA32F,
+      format: gl.RGBA,
+      type: gl.FLOAT,
       data: this.skinAnchorCpu,
       filter: gl.NEAREST,
     });
@@ -839,12 +858,43 @@ export class GPURenderer {
 
   /**
    * Anchor a player's skin sampling at world coords (x, y). The center of the
-   * skin image lines up with this tile. Default (0,0) anchors at world origin.
+   * skin image lines up with this tile in spawn mode (the default).
    */
   setPlayerSpawn(smallID: number, x: number, y: number): void {
-    const off = smallID * 2;
-    this.skinAnchorCpu[off] = x;
-    this.skinAnchorCpu[off + 1] = y;
+    this.skinStateOf(smallID).spawn = { x, y };
+    this.updateSkinPlacement(smallID);
+  }
+
+  /** Where a player's territory is now (for the "territory" skin mode). */
+  setPlayerTerritoryCenter(smallID: number, x: number, y: number): void {
+    const state = this.skinStateOf(smallID);
+    state.center = { x, y };
+    if (state.display?.mode === "territory") this.updateSkinPlacement(smallID);
+  }
+
+  private skinStateOf(smallID: number) {
+    let state = this.skinState.get(smallID);
+    if (state === undefined) {
+      state = { url: null, display: undefined, spawn: null, center: null };
+      this.skinState.set(smallID, state);
+    }
+    return state;
+  }
+
+  private updateSkinPlacement(smallID: number): void {
+    const state = this.skinStateOf(smallID);
+    this.skinAnchorCpu.set(
+      skinPlacement({
+        display: state.display,
+        image: state.url ? (this.skinImageSize.get(state.url) ?? null) : null,
+        spawn: state.spawn,
+        center: state.center,
+        mapW: this.mapW,
+        mapH: this.mapH,
+        layerSize: SKIN_DIM,
+      }),
+      smallID * 8,
+    );
     const gl = this.gl;
     gl.bindTexture(gl.TEXTURE_2D, this.skinAnchorTex);
     gl.texSubImage2D(
@@ -852,10 +902,10 @@ export class GPURenderer {
       0,
       0,
       0,
-      getPaletteSize(),
+      getPaletteSize() * 2,
       1,
-      gl.RG_INTEGER,
-      gl.UNSIGNED_SHORT,
+      gl.RGBA,
+      gl.FLOAT,
       this.skinAnchorCpu,
     );
   }
@@ -869,9 +919,23 @@ export class GPURenderer {
    * the GL spec's "undefined" wording), so players whose images haven't
    * decoded yet render with alpha=0 → falls through to base player color.
    */
-  initSkinAtlas(urls: readonly string[]): void {
+  initSkinAtlas(
+    urls: readonly string[],
+    tileUrls: ReadonlySet<string> = new Set(),
+  ): void {
     this.skinAtlas.dispose();
-    this.skinAtlas = new SkinAtlasArray(this.gl, urls, () => {});
+    this.skinAtlas = new SkinAtlasArray(
+      this.gl,
+      urls,
+      (url, _layer, width, height) => {
+        // The picture's real size decides its scale; refresh its users.
+        this.skinImageSize.set(url, { width, height });
+        for (const [smallID, state] of this.skinState) {
+          if (state.url === url) this.updateSkinPlacement(smallID);
+        }
+      },
+      tileUrls,
+    );
     this.territoryPass.setSkinAtlas(this.skinAtlas.texture);
   }
 
@@ -881,7 +945,11 @@ export class GPURenderer {
    * still decoding the layer renders transparent (zero-init) until decode
    * completes.
    */
-  setPlayerSkin(smallID: number, url: string | null): void {
+  setPlayerSkin(
+    smallID: number,
+    url: string | null,
+    display?: SkinDisplaySetting,
+  ): void {
     let layer = -1;
     if (url !== null) {
       layer = this.skinAtlas.getLayer(url);
@@ -889,6 +957,10 @@ export class GPURenderer {
     }
     this.skinLayerCpu[smallID] = layer + 1;
     this.uploadSkinLayerTex();
+    const state = this.skinStateOf(smallID);
+    state.url = url;
+    state.display = display;
+    this.updateSkinPlacement(smallID);
   }
 
   private uploadSkinLayerTex(): void {

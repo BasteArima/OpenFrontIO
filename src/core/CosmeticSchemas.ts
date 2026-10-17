@@ -1,5 +1,6 @@
 import { base64url } from "jose";
 import { z } from "zod/v4";
+import { zb } from "../../zbin";
 import { decodePatternData } from "./PatternDecoder";
 import { PlayerPattern } from "./Schemas";
 
@@ -123,8 +124,26 @@ export const CrownSchema = CosmeticSchema.extend({
   url: z.string(),
 });
 
+// How a territory skin is laid over the map (self-hosted uploads choose it;
+// absent = the picture at 1 pixel per tile, centred on the spawn). Rendered
+// by src/client/render/gl/utils/SkinPlacement.ts.
+export const SKIN_DISPLAY_MODES = [
+  "spawn",
+  "mapCenter",
+  "territory",
+  "tile",
+  "fitMap",
+] as const;
+export const SkinDisplaySchema = z.object({
+  mode: z.enum(SKIN_DISPLAY_MODES),
+  // Long side in map tiles (stamp modes) or of one tile (tile mode).
+  size: zb.uint({ min: 8, max: 4096 }).optional(),
+});
+export type SkinDisplay = z.infer<typeof SkinDisplaySchema>;
+
 export const SkinSchema = CosmeticSchema.extend({
   url: z.string(),
+  display: SkinDisplaySchema.optional(),
 });
 
 // "effects" is a cosmetic category alongside skins/flags. The catalog is nested

@@ -8,6 +8,7 @@ import {
   pngSize,
   readUploads,
   removeUpload,
+  setUploadDisplay,
   UPLOAD_LIMITS,
   uploadedCatalog,
   UploadError,
@@ -155,5 +156,37 @@ describe("self-host uploads", () => {
       height: 200,
     });
     expect(pngSize(Buffer.from("GIF89a"))).toBeNull();
+  });
+
+  test("display: stored at upload, changed by the owner only", () => {
+    const item = upload({ display: { mode: "tile", size: 64 } });
+    expect(listUploads(OWNER, dir).items[0].display).toEqual({
+      mode: "tile",
+      size: 64,
+    });
+    setUploadDisplay(item.id, OWNER, { mode: "fitMap" }, dir);
+    expect(
+      Object.values(uploadedCatalog(readUploads(dir), []).skins!)[0].display,
+    ).toEqual({
+      mode: "fitMap",
+    });
+    expect(
+      code(() => setUploadDisplay(item.id, OTHER, { mode: "spawn" }, dir)),
+    ).toBe("not_yours");
+    expect(
+      code(() => setUploadDisplay(item.id, OWNER, { mode: "upside" }, dir)),
+    ).toBe("bad_request");
+    expect(
+      code(() =>
+        setUploadDisplay(item.id, OWNER, { mode: "spawn", size: 1 }, dir),
+      ),
+    ).toBe("bad_request");
+  });
+
+  test("display only applies to skins", () => {
+    const flag = upload({ kind: "flag", title: "Flag" });
+    expect(
+      code(() => setUploadDisplay(flag.id, OWNER, { mode: "spawn" }, dir)),
+    ).toBe("bad_request");
   });
 });

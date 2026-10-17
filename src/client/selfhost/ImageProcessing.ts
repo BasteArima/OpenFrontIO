@@ -4,13 +4,20 @@
 export async function loadImage(file: File): Promise<HTMLImageElement> {
   const url = URL.createObjectURL(file);
   try {
-    const img = new Image();
-    img.src = url;
-    await img.decode();
-    return img;
+    return await loadImageUrl(url);
   } finally {
     URL.revokeObjectURL(url);
   }
+}
+
+// onload rather than img.decode(): decode() can stall in a background tab.
+export function loadImageUrl(url: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error(`could not load ${url}`));
+    img.src = url;
+  });
 }
 
 /** Size that fits `w`×`h` inside `maxW`×`maxH`, never upscaling. */

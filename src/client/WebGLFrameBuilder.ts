@@ -220,6 +220,7 @@ export class WebGLFrameBuilder {
    * just first-seen — re-uploads only when the tile actually changes.
    */
   private readonly lastSpawnTile = new Map<number, number>();
+  private readonly lastSkinCenter = new Map<number, number>();
   /** Skin atlas allocated once on first syncPlayers — player set is locked at game start. */
   private skinsInitialized = false;
   // The renderer needs to know which player is "me" so affiliation tint,
@@ -244,6 +245,7 @@ export class WebGLFrameBuilder {
     // texture starts zeroed, so the mirror must too or nothing re-uploads.
     this.effectPalette.fill(0);
     this.lastSpawnTile.clear();
+    this.lastSkinCenter.clear();
     this.localPlayerSmallID = 0;
     this.skinsInitialized = false;
   }
@@ -298,6 +300,7 @@ export class WebGLFrameBuilder {
     this.syncPlayers(gameView);
     this.syncPlayerEffects(gameView);
     this.syncPlayerSpawns(gameView);
+    this.syncSkinTerritoryCenters(gameView);
     this.syncLocalPlayer(gameView);
     this.syncSpawnOverlay(gameView);
     this.syncSmallPlayerGlow(gameView);
@@ -374,6 +377,23 @@ export class WebGLFrameBuilder {
         gameView.x(spawnTile),
         gameView.y(spawnTile),
       );
+    }
+  }
+
+  /**
+   * Skins in "territory" mode follow the middle of the player's land: the
+   * spot their name is drawn at. Only those players are pushed, and only when
+   * it moved.
+   */
+  private syncSkinTerritoryCenters(gameView: GameView): void {
+    for (const p of gameView.players()) {
+      if (p.cosmetics.skin?.display?.mode !== "territory") continue;
+      const loc = p.nameLocation();
+      if (loc === undefined) continue;
+      const key = Math.round(loc.x) * 65536 + Math.round(loc.y);
+      if (this.lastSkinCenter.get(p.smallID()) === key) continue;
+      this.lastSkinCenter.set(p.smallID(), key);
+      this.view.setPlayerTerritoryCenter(p.smallID(), loc.x, loc.y);
     }
   }
 
@@ -533,11 +553,15 @@ export class WebGLFrameBuilder {
       // Hidden skins are registered too, so the cosmetics visibility settings
       // can reveal them mid-game.
       const urls = new Set<string>();
+      const tileUrls = new Set<string>();
       for (const p of gameView.players()) {
         const url = p.equippedCosmetics.skin?.url;
         if (url) urls.add(assetUrl(url));
+        if (url && p.equippedCosmetics.skin?.display?.mode === "tile") {
+          tileUrls.add(assetUrl(url));
+        }
       }
-      this.view.initSkinAtlas([...urls]);
+      this.view.initSkinAtlas([...urls], tileUrls);
     }
     const newPlayers: PlayerStatic[] = [];
     for (const p of gameView.players()) {
@@ -599,7 +623,11 @@ export class WebGLFrameBuilder {
 
     if (p.equippedCosmetics.skin?.url) {
       const skinUrl = p.cosmetics.skin?.url;
-      this.view.setPlayerSkin(smallID, skinUrl ? assetUrl(skinUrl) : null);
+      this.view.setPlayerSkin(
+        smallID,
+        skinUrl ? assetUrl(skinUrl) : null,
+        p.cosmetics.skin?.display,
+      );
     }
 
     const metaOff = smallID * 4;

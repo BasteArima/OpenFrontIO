@@ -6,6 +6,7 @@ import {
   CosmeticNameSchema,
   EffectTypeSchema,
   PatternDataSchema,
+  SkinDisplaySchema,
 } from "./CosmeticSchemas";
 import type { GameEvent } from "./EventBus";
 import {
@@ -907,6 +908,8 @@ export const PlayerCosmeticRefsSchema = z.object({
 export const PlayerSkinSchema = z.object({
   name: CosmeticNameSchema,
   url: z.string(),
+  // Appended: how the skin is laid over the map (see SkinDisplaySchema).
+  display: SkinDisplaySchema.optional(),
 });
 
 export const PlayerCrownSchema = z.object({

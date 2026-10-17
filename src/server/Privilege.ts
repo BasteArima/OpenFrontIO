@@ -163,7 +163,11 @@ export class PrivilegeCheckerImpl implements PrivilegeChecker {
     const found = this.cosmetics.skins?.[name];
     if (!found) throw new Error(`Skin ${name} not found`);
     if (flares.includes("skin:*") || flares.includes(`skin:${found.name}`)) {
-      return { name: found.name, url: found.url };
+      return {
+        name: found.name,
+        url: found.url,
+        ...(found.display ? { display: found.display } : {}),
+      };
     }
     throw new Error(`No flares for skin ${name}`);
   }

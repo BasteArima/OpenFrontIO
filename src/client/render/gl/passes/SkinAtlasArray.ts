@@ -13,6 +13,8 @@
  *
  * Sampler wrap is CLAMP_TO_EDGE — the shader treats UVs outside [0,1] as
  * transparent so the image appears as a single stamp centered at the anchor.
+ * URLs in `tileUrls` are stretched over the whole layer instead, so the
+ * shader can repeat the layer as one tile (see utils/SkinPlacement.ts).
  */
 
 /** Per-side dimension for every atlas layer. Larger images are downscaled. */
@@ -23,7 +25,13 @@ export class SkinAtlasArray {
   private tex: WebGLTexture;
   /** url → layer index. Layers are assigned in iteration order at construction. */
   private layers = new Map<string, number>();
-  private onLayerReady: (url: string, layer: number) => void;
+  private onLayerReady: (
+    url: string,
+    layer: number,
+    width: number,
+    height: number,
+  ) => void;
+  private tileUrls: ReadonlySet<string>;
   private disposed = false;
 
   /**
@@ -33,10 +41,17 @@ export class SkinAtlasArray {
   constructor(
     gl: WebGL2RenderingContext,
     urls: readonly string[],
-    onLayerReady: (url: string, layer: number) => void,
+    onLayerReady: (
+      url: string,
+      layer: number,
+      width: number,
+      height: number,
+    ) => void,
+    tileUrls: ReadonlySet<string> = new Set(),
   ) {
     this.gl = gl;
     this.onLayerReady = onLayerReady;
+    this.tileUrls = tileUrls;
 
     if (urls.length === 0) {
       this.tex = this.makeTex(1, 1, 1);
@@ -64,8 +79,8 @@ export class SkinAtlasArray {
     img.crossOrigin = "anonymous";
     img.onload = () => {
       if (this.disposed) return;
-      this.uploadImage(img, layer);
-      this.onLayerReady(url, layer);
+      this.uploadImage(img, layer, this.tileUrls.has(url));
+      this.onLayerReady(url, layer, img.naturalWidth, img.naturalHeight);
     };
     img.onerror = () => {
       console.warn("Skin image failed to load:", url);
@@ -78,11 +93,20 @@ export class SkinAtlasArray {
    * keep native size if smaller. The shader samples cell-center as the spawn
    * anchor (UV 0.5), so centering keeps the image aligned with the spawn tile.
    */
-  private uploadImage(img: HTMLImageElement, layer: number): void {
+  private uploadImage(
+    img: HTMLImageElement,
+    layer: number,
+    tile: boolean,
+  ): void {
     const canvas = document.createElement("canvas");
     canvas.width = SKIN_DIM;
     canvas.height = SKIN_DIM;
     const ctx = canvas.getContext("2d", { willReadFrequently: false })!;
+    if (tile) {
+      ctx.drawImage(img, 0, 0, SKIN_DIM, SKIN_DIM);
+      this.uploadCanvas(canvas, layer);
+      return;
+    }
     const scale = Math.min(
       1,
       SKIN_DIM / img.naturalWidth,
@@ -93,7 +117,10 @@ export class SkinAtlasArray {
     const offX = ((SKIN_DIM - drawW) / 2) | 0;
     const offY = ((SKIN_DIM - drawH) / 2) | 0;
     ctx.drawImage(img, offX, offY, drawW, drawH);
+    this.uploadCanvas(canvas, layer);
+  }
 
+  private uploadCanvas(canvas: HTMLCanvasElement, layer: number): void {
     const gl = this.gl;
     gl.bindTexture(gl.TEXTURE_2D_ARRAY, this.tex);
     gl.texSubImage3D(

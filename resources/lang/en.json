@@ -1917,12 +1917,34 @@
     "toggle_achievements": "Toggle achievements"
   },
   "skin_upload": {
+    "cancel": "Cancel",
     "cell_scale": "Map tiles per cell",
     "cells": "Detail (cells across)",
     "choose_file": "Choose a picture",
     "delete": "Delete",
     "delete_confirm": "Delete \"{title}\"? Players using it will lose it.",
+    "display": {
+      "hint": {
+        "fitMap": "Stretched over the whole map: your land reveals its piece of one big picture.",
+        "mapCenter": "One picture centred on the middle of the map — wherever you are, you show the part under your land.",
+        "spawn": "One picture centred where you start. It stays put while you grow.",
+        "territory": "One picture centred on the middle of your country; it moves with your borders.",
+        "tile": "The picture repeats edge to edge, so all of your land is covered."
+      },
+      "mode": {
+        "fitMap": "Whole map",
+        "mapCenter": "Map centre",
+        "spawn": "From spawn",
+        "territory": "Follows country",
+        "tile": "Tiles"
+      },
+      "size": "Picture size: {n} map tiles",
+      "tile_size": "Tile size: {n} map tiles",
+      "title": "How it sits on the map"
+    },
     "done": "Uploaded! It is in your inventory now — for everyone.",
+    "edit": "Adjust",
+    "editing": "Display of \"{title}\"",
     "error": {
       "bad_image": "That doesn't look like a picture.",
       "bad_pattern": "Couldn't make a pattern from this picture.",
@@ -1941,7 +1963,7 @@
     "hint": {
       "flag": "Shown next to your name on the map. Best with a 3:2 picture.",
       "pattern": "Turned into a two-colour tile repeated over your territory. Tune detail and threshold until the preview looks right; the colours come from the palette you pick in the inventory.",
-      "skin": "Drawn once on your territory, centred on where you spawn: 1 pixel = 1 map tile (up to 1024×1024). Transparent parts show your colour."
+      "skin": "Laid over your territory — choose how below. Transparent parts show your colour."
     },
     "invert": "Swap colours",
     "kind": {
@@ -1956,7 +1978,13 @@
     "open": "Upload your own picture",
     "password": "Upload password",
     "pattern_size": "{w}×{h} cells",
-    "skin_size": "{w}×{h} map tiles",
+    "preview": {
+      "country": "Country size",
+      "hint": "Click the map to move your spawn. The faint picture is where it lies; it shows only over your land.",
+      "title": "Preview on the World map (2000×1000)"
+    },
+    "save": "Save",
+    "saved": "Saved. The new display applies from your next game.",
     "threshold": "Threshold",
     "title": "Your own pictures",
     "upload": "Upload",

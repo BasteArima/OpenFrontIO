@@ -9,7 +9,7 @@ uniform sampler2D  uPatternMeta;  // RGBA32F — 1D buffer, 1 px per owner. R=ha
 uniform usampler2D uPatternData;  // R8UI    — 2D buffer, row per owner, bytes for bitmask
 uniform sampler2DArray uSkinAtlas; // RGBA8 — per-skin PNG layer, tiled via REPEAT wrap
 uniform usampler2D uSkinLayer;    // R8UI — 1D buffer, 1 px per owner. 0=no skin, otherwise layer+1
-uniform usampler2D uSkinAnchor;   // RG16UI — 1D buffer, anchor tile (cx, cy) per owner. (0,0) = world origin
+uniform sampler2D uSkinAnchor;    // RGBA32F — 2 texels per owner: (anchor.xy, tile, 0), (kx, ky, 0, 0); see SkinPlacement.ts
 uniform int uShowPatterns;
 uniform int uIsTeamMode;          // 1 = teams (tint skin by team color), 0 = FFA (raw skin colors)
 const float SKIN_DIM = 1024.0;    // atlas cell size in tiles — must match SkinAtlasArray.SKIN_DIM
@@ -77,14 +77,20 @@ void main() {
     // single stamp centered at the player's spawn tile — UVs outside [0,1]
     // are treated as transparent so tiles beyond the image bounds fall back
     // to the regular palette color. (0,0) anchor sentinel = world origin.
-    uvec2 anchor = texelFetch(uSkinAnchor, ivec2(int(owner), 0), 0).rg;
-    vec2 anchorOffset = (anchor == uvec2(0u)) ? vec2(0.0) : vec2(anchor);
+    vec4 place = texelFetch(uSkinAnchor, ivec2(int(owner) * 2, 0), 0);
+    vec2 k = texelFetch(uSkinAnchor, ivec2(int(owner) * 2 + 1, 0), 0).xy;
+    vec2 rel = vec2(tc) - place.xy;
 
-    vec2 skinUV = (vec2(tc) - anchorOffset) / vec2(SKIN_DIM) + vec2(0.5);
+    // Tile mode repeats the whole layer every k tiles; stamp modes place the
+    // layer once, k map tiles per picture pixel.
+    bool tiled = place.z > 0.5;
+    vec2 skinUV = tiled
+      ? fract(rel / k)
+      : rel / (vec2(SKIN_DIM) * k) + vec2(0.5);
     vec4 skin = texture(uSkinAtlas, vec3(skinUV, float(skinLayerPlus1) - 1.0));
-    bool inBounds =
+    bool inBounds = tiled || (
       skinUV.x >= 0.0 && skinUV.x <= 1.0 &&
-      skinUV.y >= 0.0 && skinUV.y <= 1.0;
+      skinUV.y >= 0.0 && skinUV.y <= 1.0);
     float skinAlpha = inBounds ? skin.a : 0.0;
     // Transparent (or out-of-bounds) pixels fall through to the player color;
     // opaque pixels show the skin (tinted by team color in team games).

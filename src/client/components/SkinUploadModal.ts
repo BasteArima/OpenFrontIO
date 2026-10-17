@@ -1,9 +1,11 @@
 import { html, LitElement, nothing, TemplateResult } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
+import type { SkinDisplay } from "../../core/CosmeticSchemas";
 import { PlayerPattern } from "../../core/Schemas";
 import {
   encodePattern,
   loadImage,
+  loadImageUrl,
   patternCells,
   thresholdBits,
   toPng,
@@ -11,6 +13,7 @@ import {
 import {
   deleteUpload,
   listUploads,
+  updateUploadDisplay,
   uploadCosmetic,
   UploadedItem,
   UploadKind,
@@ -18,6 +21,7 @@ import {
 } from "../selfhost/UploadsApi";
 import { translateText } from "../Utils";
 import { renderPatternPreview } from "./PatternPreview";
+import "./SkinDisplayPreview";
 
 const PASSWORD_KEY = "selfhost.uploadPassword";
 const MAX_FILE_BYTES = 10 * 1024 * 1024;
@@ -25,6 +29,18 @@ const MAX_FILE_BYTES = 10 * 1024 * 1024;
 // keeps at most 1024×1024 of it. Flags sit next to names (128×85 cells).
 const SKIN_MAX = 1024;
 const FLAG_MAX = { w: 256, h: 170 };
+
+type DisplayMode = SkinDisplay["mode"];
+const DISPLAY_MODES: DisplayMode[] = [
+  "spawn",
+  "territory",
+  "mapCenter",
+  "tile",
+  "fitMap",
+];
+// Slider ranges, in map tiles: the picture's long side, or one tile's.
+const STAMP_SIZE = { min: 32, max: 2048, step: 16 };
+const TILE_SIZE = { min: 16, max: 512, step: 8 };
 
 /**
  * Self-hosted servers only: upload your own skin, flag or pattern to the
@@ -47,6 +63,10 @@ export class SkinUploadModal extends LitElement {
   @state() private cellScale = 1;
   @state() private busy = false;
   @state() private status: { ok: boolean; text: string } | null = null;
+  @state() private displayMode: DisplayMode = "spawn";
+  @state() private displaySize = 256;
+  /** Set while changing how one of my skins is displayed. */
+  @state() private editing: UploadedItem | null = null;
   @state() private mine: UploadedItem[] = [];
   @state() private perOwner = 10;
 
@@ -97,6 +117,68 @@ export class SkinUploadModal extends LitElement {
     }
   }
 
+  private display(): SkinDisplay {
+    return this.displayMode === "fitMap"
+      ? { mode: "fitMap" }
+      : { mode: this.displayMode, size: this.displaySize };
+  }
+
+  private setMode(mode: DisplayMode) {
+    this.displayMode = mode;
+    const range = mode === "tile" ? TILE_SIZE : STAMP_SIZE;
+    this.displaySize = Math.min(
+      range.max,
+      Math.max(range.min, this.displaySize),
+    );
+  }
+
+  private async startEdit(item: UploadedItem) {
+    if (!item.url) return;
+    this.status = null;
+    try {
+      const img = await loadImageUrl(item.url);
+      this.editing = item;
+      this.kind = "skin";
+      this.image = img;
+      this.displayMode = item.display?.mode ?? "spawn";
+      this.displaySize =
+        item.display?.size ?? Math.max(img.naturalWidth, img.naturalHeight);
+      this.querySelector("[data-upload-form]")?.scrollIntoView({
+        block: "start",
+      });
+    } catch {
+      this.status = {
+        ok: false,
+        text: translateText("skin_upload.error.bad_image"),
+      };
+    }
+  }
+
+  private cancelEdit() {
+    this.editing = null;
+    this.image = null;
+    this.fileName = "";
+  }
+
+  private async saveEdit() {
+    if (this.editing === null || this.busy) return;
+    this.busy = true;
+    try {
+      await updateUploadDisplay(this.editing.id, this.display());
+      this.status = { ok: true, text: translateText("skin_upload.saved") };
+      this.cancelEdit();
+      await this.refresh();
+      this.changed();
+    } catch {
+      this.status = {
+        ok: false,
+        text: translateText("skin_upload.error.server_error"),
+      };
+    } finally {
+      this.busy = false;
+    }
+  }
+
   /** The bitmap the current options make of the picture. */
   private pattern(): { data: string; width: number; height: number } | null {
     if (this.image === null) return null;
@@ -131,6 +213,7 @@ export class SkinUploadModal extends LitElement {
         password: this.password,
         image,
         pattern,
+        display: this.kind === "skin" ? this.display() : undefined,
       });
       localStorage.setItem(PASSWORD_KEY, this.password);
       this.status = { ok: true, text: translateText("skin_upload.done") };
@@ -213,11 +296,8 @@ export class SkinUploadModal extends LitElement {
         </div>
       </div>`;
     }
-    const max =
-      this.kind === "skin"
-        ? { w: SKIN_MAX, h: SKIN_MAX }
-        : { w: FLAG_MAX.w, h: FLAG_MAX.h };
-    const png = toPng(this.image, max.w, max.h);
+    if (this.kind === "skin") return this.renderSkinDisplay(this.image);
+    const png = toPng(this.image, FLAG_MAX.w, FLAG_MAX.h);
     return html`<div class="flex flex-col items-center gap-2">
       <img
         src=${png.dataUrl}
@@ -228,13 +308,93 @@ export class SkinUploadModal extends LitElement {
           : ""}"
       />
       <div class="text-xs text-white/50">
-        ${translateText(
-          this.kind === "skin"
-            ? "skin_upload.skin_size"
-            : "skin_upload.flag_size",
-          { w: png.width, h: png.height },
+        ${translateText("skin_upload.flag_size", {
+          w: png.width,
+          h: png.height,
+        })}
+      </div>
+    </div>`;
+  }
+
+  private renderEditForm(): TemplateResult {
+    return html`<div class="text-sm font-bold text-white">
+        ${translateText("skin_upload.editing", {
+          title: this.editing?.title ?? "",
+        })}
+      </div>
+      ${this.image ? this.renderSkinDisplay(this.image) : nothing}
+      <div class="flex gap-2">
+        <button
+          type="button"
+          data-upload-save
+          ?disabled=${this.busy}
+          class="flex-1 rounded-lg bg-blue-600 px-4 py-2 font-bold text-white disabled:opacity-40"
+          @click=${() => void this.saveEdit()}
+        >
+          ${translateText("skin_upload.save")}
+        </button>
+        <button
+          type="button"
+          class="rounded-lg border border-white/15 bg-white/5 px-4 py-2 font-bold text-white/80 hover:bg-white/10"
+          @click=${() => this.cancelEdit()}
+        >
+          ${translateText("skin_upload.cancel")}
+        </button>
+      </div>`;
+  }
+
+  private renderSkinDisplay(img: HTMLImageElement): TemplateResult {
+    const range = this.displayMode === "tile" ? TILE_SIZE : STAMP_SIZE;
+    return html`<div class="flex flex-col gap-3" data-skin-display>
+      <div class="text-sm font-bold text-white">
+        ${translateText("skin_upload.display.title")}
+      </div>
+      <div class="grid grid-cols-2 gap-2 sm:grid-cols-5">
+        ${DISPLAY_MODES.map(
+          (mode) =>
+            html`<button
+              type="button"
+              data-display-mode=${mode}
+              class="rounded-lg border px-2 py-2 text-xs font-bold transition-colors ${this
+                .displayMode === mode
+                ? "border-malibu-blue/60 bg-malibu-blue/20 text-white"
+                : "border-white/10 bg-white/5 text-white/70 hover:bg-white/10"}"
+              @click=${() => this.setMode(mode)}
+            >
+              ${translateText(`skin_upload.display.mode.${mode}`)}
+            </button>`,
         )}
       </div>
+      <div class="text-xs text-white/50">
+        ${translateText(`skin_upload.display.hint.${this.displayMode}`)}
+      </div>
+      ${this.displayMode === "fitMap"
+        ? nothing
+        : html`<label class="flex flex-col gap-1 text-xs text-white/70">
+            <span
+              >${translateText(
+                this.displayMode === "tile"
+                  ? "skin_upload.display.tile_size"
+                  : "skin_upload.display.size",
+                { n: this.displaySize },
+              )}</span
+            >
+            <input
+              type="range"
+              min=${range.min}
+              max=${range.max}
+              step=${range.step}
+              .value=${String(this.displaySize)}
+              @input=${(e: Event) =>
+                (this.displaySize = Number(
+                  (e.target as HTMLInputElement).value,
+                ))}
+            />
+          </label>`}
+      <skin-display-preview
+        .image=${img}
+        .display=${this.display()}
+      ></skin-display-preview>
     </div>`;
   }
 
@@ -347,6 +507,16 @@ export class SkinUploadModal extends LitElement {
                       ${translateText(`skin_upload.kind.${item.kind}`)}
                     </div>
                   </div>
+                  ${item.kind === "skin"
+                    ? html`<button
+                        type="button"
+                        data-upload-edit=${item.id}
+                        class="rounded-md bg-white/10 px-2 py-1 text-xs font-bold text-white hover:bg-white/20"
+                        @click=${() => void this.startEdit(item)}
+                      >
+                        ${translateText("skin_upload.edit")}
+                      </button>`
+                    : nothing}
                   <button
                     type="button"
                     data-upload-delete=${item.id}
@@ -389,76 +559,85 @@ export class SkinUploadModal extends LitElement {
           </button>
         </div>
 
-        <div class="flex gap-2">
-          ${this.renderKindButton("skin")} ${this.renderKindButton("flag")}
-          ${this.renderKindButton("pattern")}
-        </div>
-        <div class="text-xs text-white/50">
-          ${translateText(`skin_upload.hint.${this.kind}`)}
-        </div>
+        <div data-upload-form class="flex flex-col gap-4">
+          ${this.editing !== null
+            ? this.renderEditForm()
+            : html` <div class="flex gap-2">
+                  ${this.renderKindButton("skin")}
+                  ${this.renderKindButton("flag")}
+                  ${this.renderKindButton("pattern")}
+                </div>
+                <div class="text-xs text-white/50">
+                  ${translateText(`skin_upload.hint.${this.kind}`)}
+                </div>
 
-        <label
-          class="flex cursor-pointer items-center gap-3 rounded-lg border border-dashed border-white/20 bg-white/5 px-3 py-3 text-sm text-white/80 hover:bg-white/10"
-        >
-          <span class="rounded-md bg-white/10 px-3 py-1 font-bold text-white"
-            >${translateText("skin_upload.choose_file")}</span
-          >
-          <span class="truncate text-white/50"
-            >${this.fileName || translateText("skin_upload.no_file")}</span
-          >
-          <input
-            data-upload-file
-            type="file"
-            accept="image/png,image/jpeg,image/webp,image/gif"
-            class="hidden"
-            @change=${(e: Event) => void this.onFile(e)}
-          />
-        </label>
-        ${this.fileError
-          ? html`<div class="text-sm text-red-300">${this.fileError}</div>`
-          : nothing}
-        ${this.renderPatternOptions()} ${this.renderPreview()}
+                <label
+                  class="flex cursor-pointer items-center gap-3 rounded-lg border border-dashed border-white/20 bg-white/5 px-3 py-3 text-sm text-white/80 hover:bg-white/10"
+                >
+                  <span
+                    class="rounded-md bg-white/10 px-3 py-1 font-bold text-white"
+                    >${translateText("skin_upload.choose_file")}</span
+                  >
+                  <span class="truncate text-white/50"
+                    >${this.fileName ||
+                    translateText("skin_upload.no_file")}</span
+                  >
+                  <input
+                    data-upload-file
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp,image/gif"
+                    class="hidden"
+                    @change=${(e: Event) => void this.onFile(e)}
+                  />
+                </label>
+                ${this.fileError
+                  ? html`<div class="text-sm text-red-300">
+                      ${this.fileError}
+                    </div>`
+                  : nothing}
+                ${this.renderPatternOptions()} ${this.renderPreview()}
 
-        <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <label class="flex flex-col gap-1 text-xs text-white/70">
-            ${translateText("skin_upload.name")}
-            <input
-              type="text"
-              maxlength="40"
-              class="rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-sm text-white"
-              .value=${this.itemTitle}
-              @input=${(e: Event) =>
-                (this.itemTitle = (e.target as HTMLInputElement).value)}
-            />
-          </label>
-          <label class="flex flex-col gap-1 text-xs text-white/70">
-            ${translateText("skin_upload.password")}
-            <input
-              type="password"
-              class="rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-sm text-white"
-              .value=${this.password}
-              @input=${(e: Event) =>
-                (this.password = (e.target as HTMLInputElement).value)}
-            />
-          </label>
+                <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <label class="flex flex-col gap-1 text-xs text-white/70">
+                    ${translateText("skin_upload.name")}
+                    <input
+                      type="text"
+                      maxlength="40"
+                      class="rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-sm text-white"
+                      .value=${this.itemTitle}
+                      @input=${(e: Event) =>
+                        (this.itemTitle = (e.target as HTMLInputElement).value)}
+                    />
+                  </label>
+                  <label class="flex flex-col gap-1 text-xs text-white/70">
+                    ${translateText("skin_upload.password")}
+                    <input
+                      type="password"
+                      class="rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-sm text-white"
+                      .value=${this.password}
+                      @input=${(e: Event) =>
+                        (this.password = (e.target as HTMLInputElement).value)}
+                    />
+                  </label>
+                </div>
+
+                ${full
+                  ? html`<div class="text-sm text-amber-300">
+                      ${translateText("skin_upload.error.limit_reached")}
+                    </div>`
+                  : nothing}
+                <button
+                  type="button"
+                  data-upload-submit
+                  ?disabled=${!canSubmit}
+                  class="rounded-lg bg-blue-600 px-4 py-2 font-bold text-white disabled:cursor-not-allowed disabled:opacity-40"
+                  @click=${() => void this.submit()}
+                >
+                  ${this.busy
+                    ? translateText("skin_upload.uploading")
+                    : translateText("skin_upload.upload")}
+                </button>`}
         </div>
-
-        ${full
-          ? html`<div class="text-sm text-amber-300">
-              ${translateText("skin_upload.error.limit_reached")}
-            </div>`
-          : nothing}
-        <button
-          type="button"
-          data-upload-submit
-          ?disabled=${!canSubmit}
-          class="rounded-lg bg-blue-600 px-4 py-2 font-bold text-white disabled:cursor-not-allowed disabled:opacity-40"
-          @click=${() => void this.submit()}
-        >
-          ${this.busy
-            ? translateText("skin_upload.uploading")
-            : translateText("skin_upload.upload")}
-        </button>
         ${this.status
           ? html`<div
               class="text-sm ${this.status.ok

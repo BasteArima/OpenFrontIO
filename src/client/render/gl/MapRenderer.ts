@@ -34,6 +34,7 @@ import type { SpawnCenter } from "./passes/SpawnOverlayPass";
 import type { AttackTroopLabel } from "./passes/WorldTextPass";
 import { GPURenderer } from "./Renderer";
 import type { RenderSettings } from "./RenderSettings";
+import type { SkinDisplaySetting } from "./utils/SkinPlacement";
 
 export class MapRenderer {
   private renderer: GPURenderer | null = null;
@@ -199,12 +200,23 @@ export class MapRenderer {
       patternData,
     );
   }
-  setPlayerSkin(smallID: number, url: string | null): void {
-    this.renderer?.setPlayerSkin(smallID, url);
+  setPlayerSkin(
+    smallID: number,
+    url: string | null,
+    display?: SkinDisplaySetting,
+  ): void {
+    this.renderer?.setPlayerSkin(smallID, url, display);
   }
-  initSkinAtlas(urls: readonly string[]): void {
-    this.renderer?.initSkinAtlas(urls);
+  initSkinAtlas(
+    urls: readonly string[],
+    tileUrls?: ReadonlySet<string>,
+  ): void {
+    this.renderer?.initSkinAtlas(urls, tileUrls);
   }
+  setPlayerTerritoryCenter(smallID: number, x: number, y: number): void {
+    this.renderer?.setPlayerTerritoryCenter(smallID, x, y);
+  }
+
   setPlayerSpawn(smallID: number, x: number, y: number): void {
     this.renderer?.setPlayerSpawn(smallID, x, y);
   }

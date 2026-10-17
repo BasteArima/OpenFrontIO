@@ -1,3 +1,4 @@
+import type { SkinDisplay } from "../../core/CosmeticSchemas";
 import { getApiBase } from "../ApiBase";
 import { getPersistentID } from "../Auth";
 
@@ -14,6 +15,7 @@ export interface UploadedItem {
   uploader: string;
   createdAt: number;
   url?: string;
+  display?: SkinDisplay;
   mine: boolean;
 }
 
@@ -30,6 +32,8 @@ export interface NewUpload {
   image?: string;
   /** Encoded pattern bitmap (pattern). */
   pattern?: string;
+  /** How a skin is laid over the map. */
+  display?: SkinDisplay;
 }
 
 /** Server error code ("wrong_password", "limit_reached", …) or "network". */
@@ -81,6 +85,26 @@ export async function uploadCosmetic(upload: NewUpload): Promise<string> {
   }
   if (!res.ok) throw await failure(res);
   return ((await res.json()) as { name: string }).name;
+}
+
+export async function updateUploadDisplay(
+  id: string,
+  display: SkinDisplay,
+): Promise<void> {
+  let res: Response;
+  try {
+    res = await fetch(`${base()}/${id}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        "x-bf-owner": getPersistentID(),
+      },
+      body: JSON.stringify({ display }),
+    });
+  } catch {
+    throw new UploadRequestError("network");
+  }
+  if (!res.ok) throw await failure(res);
 }
 
 export async function deleteUpload(id: string): Promise<void> {

@@ -5,7 +5,11 @@ import { base64url } from "jose";
 import os from "os";
 import path from "path";
 import { z } from "zod";
-import { Cosmetics } from "../core/CosmeticSchemas";
+import {
+  Cosmetics,
+  SkinDisplay,
+  SkinDisplaySchema,
+} from "../core/CosmeticSchemas";
 import { decodePatternData } from "../core/PatternDecoder";
 import { logger } from "./Logger";
 
@@ -31,6 +35,8 @@ export interface UploadItem {
   // skin/flag: the stored PNG; pattern: the encoded bitmap.
   file?: string;
   pattern?: string;
+  // skin: how it is laid over the map (absent = 1 px per tile at the spawn).
+  display?: SkinDisplay;
 }
 
 export const UPLOAD_LIMITS = {
@@ -117,7 +123,11 @@ export function uploadedCatalog(
     } else if (item.kind === "flag" && item.file) {
       flags[base.name] = { ...base, url: fileUrl(item.file) };
     } else if (item.kind === "skin" && item.file) {
-      skins[base.name] = { ...base, url: fileUrl(item.file) };
+      skins[base.name] = {
+        ...base,
+        url: fileUrl(item.file),
+        ...(item.display ? { display: item.display } : {}),
+      };
     }
   }
   return { patterns, flags, skins };
@@ -146,6 +156,7 @@ const UploadRequestSchema = z.object({
   title: z.string().max(200),
   image: z.string().optional(),
   pattern: z.string().max(1403).optional(),
+  display: SkinDisplaySchema.optional(),
 });
 
 export type UploadRequest = z.input<typeof UploadRequestSchema>;
@@ -224,6 +235,7 @@ export function addUpload(
       throw new UploadError(400, "too_large_image");
     }
     item.file = `${id}.png`;
+    if (req.kind === "skin" && req.display) item.display = req.display;
     fs.mkdirSync(dir, { recursive: true });
     fs.writeFileSync(path.join(dir, item.file), bytes);
   }
@@ -231,6 +243,26 @@ export function addUpload(
   writeUploads([...items, item], dir);
   log.info("upload added", { id, kind: item.kind, title });
   return item;
+}
+
+/** Changes how one of the owner's skins is displayed. */
+export function setUploadDisplay(
+  id: string,
+  persistentId: string,
+  display: unknown,
+  dir = uploadsDir(),
+): void {
+  const parsed = SkinDisplaySchema.safeParse(display);
+  if (!parsed.success) throw new UploadError(400, "bad_request");
+  const items = readUploads(dir);
+  const item = items.find((i) => i.id === id);
+  if (!item) throw new UploadError(404, "not_found");
+  if (item.owner !== ownerHash(persistentId)) {
+    throw new UploadError(403, "not_yours");
+  }
+  if (item.kind !== "skin") throw new UploadError(400, "bad_request");
+  item.display = parsed.data;
+  writeUploads(items, dir);
 }
 
 /** Deletes one of the owner's uploads. Throws UploadError on refusal. */
@@ -271,6 +303,7 @@ export function listUploads(persistentId: string | undefined, dir?: string) {
       uploader: i.uploader,
       createdAt: i.createdAt,
       url: i.file ? fileUrl(i.file) : undefined,
+      display: i.display,
       mine: owner !== null && i.owner === owner,
     })),
   };
@@ -319,6 +352,20 @@ export function registerSelfHostUploads(app: Express): void {
     }
     try {
       removeUpload(req.params.id, owner);
+      res.status(204).end();
+    } catch (error) {
+      sendError(res, error);
+    }
+  });
+
+  app.patch("/_api/uploads/:id", json, (req, res) => {
+    const owner = ownerFrom(req);
+    if (!owner || !/^[0-9a-f]{12}$/.test(req.params.id)) {
+      res.status(400).json({ error: "bad_request" });
+      return;
+    }
+    try {
+      setUploadDisplay(req.params.id, owner, req.body?.display);
       res.status(204).end();
     } catch (error) {
       sendError(res, error);
