@@ -25,7 +25,7 @@ import { MasterLobbyService } from "./MasterLobbyService";
 import { setNoStoreHeaders } from "./NoStoreHeaders";
 import { startPolling } from "./PollingLoop";
 import { renderAppShell } from "./RenderHtml";
-import { readSelfHostCatalogText } from "./SelfHostCosmetics";
+import { selfHostCatalogJson } from "./SelfHostCosmetics";
 import { ServerEnv } from "./ServerEnv";
 import { applyStaticAssetCacheControl } from "./StaticAssetCache";
 
@@ -293,7 +293,7 @@ app.get("/api/health", (_req, res) => {
 // enabled) and every other API call treats as "nothing there".
 app.get("/_api/cosmetics.json", (_req, res) => {
   try {
-    res.type("application/json").send(readSelfHostCatalogText());
+    res.type("application/json").send(selfHostCatalogJson());
   } catch (error) {
     log.error("Error reading the self-host cosmetics catalog:", error);
     res.status(404).json({ error: "no cosmetics catalog" });

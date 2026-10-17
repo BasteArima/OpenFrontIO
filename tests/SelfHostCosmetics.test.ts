@@ -5,7 +5,8 @@ import { describe, expect, test } from "vitest";
 import { decodePatternData } from "../src/core/PatternDecoder";
 import { SELFHOST_FLARES } from "../src/core/SelfHost";
 import {
-  loadSelfHostCatalog,
+  loadRawSelfHostCatalog,
+  resolveCatalogAssets,
   SelfHostPrivileges,
 } from "../src/server/SelfHostCosmetics";
 
@@ -18,7 +19,7 @@ const lang = (code: string) =>
   );
 
 describe("self-host cosmetics catalog", () => {
-  const catalog = loadSelfHostCatalog();
+  const catalog = loadRawSelfHostCatalog();
 
   test("every pattern decodes and fits the renderer's 1024 bytes", () => {
     expect(Object.keys(catalog.patterns).length).toBeGreaterThan(0);
@@ -39,6 +40,17 @@ describe("self-host cosmetics catalog", () => {
       const file = path.join(__dirname, "..", "resources", flag.url);
       expect(fs.existsSync(file), flag.url).toBe(true);
     }
+  });
+
+  test("flag URLs resolve to the build's hashed asset names", () => {
+    const [key, flag] = Object.entries(catalog.flags)[0];
+    const hashed = `/_assets${flag.url.replace(/\.svg$/, ".0123abcd.svg")}`;
+    const resolved = resolveCatalogAssets(catalog, {
+      [flag.url.replace(/^\//, "")]: hashed,
+    });
+    expect(resolved.flags[key].url).toBe(hashed);
+    // Without a build (dev server) the resource path is kept.
+    expect(resolveCatalogAssets(catalog, {}).flags[key].url).toBe(flag.url);
   });
 
   test("everything has an English and a Russian name", () => {
