@@ -207,14 +207,17 @@ export class MapRenderer {
   ): void {
     this.renderer?.setPlayerSkin(smallID, url, display);
   }
-  initSkinAtlas(
-    urls: readonly string[],
-    tileUrls?: ReadonlySet<string>,
-  ): void {
+  initSkinAtlas(urls: readonly string[], tileUrls?: ReadonlySet<string>): void {
     this.renderer?.initSkinAtlas(urls, tileUrls);
   }
   setPlayerTerritoryCenter(smallID: number, x: number, y: number): void {
     this.renderer?.setPlayerTerritoryCenter(smallID, x, y);
+  }
+  setPlayerTerritoryBox(
+    smallID: number,
+    box: { x: number; y: number; w: number; h: number },
+  ): void {
+    this.renderer?.setPlayerTerritoryBox(smallID, box);
   }
 
   setPlayerSpawn(smallID: number, x: number, y: number): void {

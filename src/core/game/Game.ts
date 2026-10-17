@@ -1141,4 +1141,6 @@ export interface NameViewData {
   x: number;
   y: number;
   size: number;
+  /** Bounding box of the player's main landmass (skins that fit the country). */
+  box?: { x: number; y: number; w: number; h: number };
 }

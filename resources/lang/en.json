@@ -1924,7 +1924,9 @@
     "delete": "Delete",
     "delete_confirm": "Delete \"{title}\"? Players using it will lose it.",
     "display": {
+      "country_size": "Size: {n}% of the country",
       "hint": {
+        "country": "Covers your country and grows with it: as your borders spread, the picture stretches and moves to match. The size keeps its ratio to the country.",
         "fitMap": "Stretched over the whole map: your land reveals its piece of one big picture.",
         "mapCenter": "One picture centred on the middle of the map — wherever you are, you show the part under your land.",
         "spawn": "One picture centred where you start. It stays put while you grow.",
@@ -1932,6 +1934,7 @@
         "tile": "The picture repeats edge to edge, so all of your land is covered."
       },
       "mode": {
+        "country": "Fits country",
         "fitMap": "Whole map",
         "mapCenter": "Map centre",
         "spawn": "From spawn",

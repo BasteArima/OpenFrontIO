@@ -2,7 +2,7 @@ import { html, LitElement, PropertyValues } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import type { SkinDisplay } from "../../core/CosmeticSchemas";
 import { SKIN_DIM } from "../render/gl/passes/SkinAtlasArray";
-import { skinPlacement } from "../render/gl/utils/SkinPlacement";
+import { type SkinBox, skinPlacement } from "../render/gl/utils/SkinPlacement";
 import { translateText } from "../Utils";
 
 // A sketch of the World map (2000×1000 tiles) with a growing country, to show
@@ -34,6 +34,7 @@ export class SkinDisplayPreview extends LitElement {
   private territory(): {
     points: [number, number][];
     center: { x: number; y: number };
+    box: SkinBox;
   } {
     const r = this.countryRadius;
     const cx = this.spawn.x + r * 0.35;
@@ -48,7 +49,15 @@ export class SkinDisplayPreview extends LitElement {
         cy + Math.sin(a) * r * wobble,
       ]);
     }
-    return { points, center: { x: cx, y: cy } };
+    const xs = points.map(([x]) => x);
+    const ys = points.map(([, y]) => y);
+    const x0 = Math.min(...xs);
+    const y0 = Math.min(...ys);
+    return {
+      points,
+      center: { x: cx, y: cy },
+      box: { x: x0, y: y0, w: Math.max(...xs) - x0, h: Math.max(...ys) - y0 },
+    };
   }
 
   private draw(): void {
@@ -73,7 +82,7 @@ export class SkinDisplayPreview extends LitElement {
       ctx.stroke();
     }
 
-    const { points, center } = this.territory();
+    const { points, center, box } = this.territory();
     const path = new Path2D();
     points.forEach(([x, y], i) =>
       i === 0
@@ -94,6 +103,7 @@ export class SkinDisplayPreview extends LitElement {
         image: { width: img.naturalWidth, height: img.naturalHeight },
         spawn: this.spawn,
         center,
+        box,
         mapW: MAP_W,
         mapH: MAP_H,
         layerSize: SKIN_DIM,

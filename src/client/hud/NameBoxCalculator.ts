@@ -41,6 +41,12 @@ export function placeSpawnName(game: Game, player: Player): NameViewData {
     x: Math.ceil(game.x(spawnTile)),
     y: Math.ceil(game.y(spawnTile) - fontSize / 3),
     size: fontSize,
+    box: {
+      x: game.x(spawnTile) - SPAWN_REGION_DIAMETER / 2,
+      y: game.y(spawnTile) - SPAWN_REGION_DIAMETER / 2,
+      w: SPAWN_REGION_DIAMETER,
+      h: SPAWN_REGION_DIAMETER,
+    },
   };
 }
 
@@ -90,6 +96,12 @@ export function placeName(game: Game, player: Player): NameViewData {
     x: Math.ceil(center.x),
     y: Math.ceil(center.y),
     size: fontSize,
+    box: {
+      x: boundingBox.min.x,
+      y: boundingBox.min.y,
+      w: width + 1,
+      h: height + 1,
+    },
   };
 }
 

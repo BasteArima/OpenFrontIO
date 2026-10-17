@@ -220,7 +220,7 @@ export class WebGLFrameBuilder {
    * just first-seen — re-uploads only when the tile actually changes.
    */
   private readonly lastSpawnTile = new Map<number, number>();
-  private readonly lastSkinCenter = new Map<number, number>();
+  private readonly lastSkinCenter = new Map<number, string>();
   /** Skin atlas allocated once on first syncPlayers — player set is locked at game start. */
   private skinsInitialized = false;
   // The renderer needs to know which player is "me" so affiliation tint,
@@ -382,15 +382,25 @@ export class WebGLFrameBuilder {
 
   /**
    * Skins in "territory" mode follow the middle of the player's land: the
-   * spot their name is drawn at. Only those players are pushed, and only when
-   * it moved.
+   * spot their name is drawn at; "country" skins cover the main landmass's
+   * bounding box. Only those players are pushed, and only when it changed.
    */
   private syncSkinTerritoryCenters(gameView: GameView): void {
     for (const p of gameView.players()) {
-      if (p.cosmetics.skin?.display?.mode !== "territory") continue;
+      const mode = p.cosmetics.skin?.display?.mode;
+      if (mode !== "territory" && mode !== "country") continue;
       const loc = p.nameLocation();
       if (loc === undefined) continue;
-      const key = Math.round(loc.x) * 65536 + Math.round(loc.y);
+      if (mode === "country") {
+        const b = loc.box;
+        if (b === undefined) continue;
+        const key = `${b.x},${b.y},${b.w},${b.h}`;
+        if (this.lastSkinCenter.get(p.smallID()) === key) continue;
+        this.lastSkinCenter.set(p.smallID(), key);
+        this.view.setPlayerTerritoryBox(p.smallID(), b);
+        continue;
+      }
+      const key = `${Math.round(loc.x)},${Math.round(loc.y)}`;
       if (this.lastSkinCenter.get(p.smallID()) === key) continue;
       this.lastSkinCenter.set(p.smallID(), key);
       this.view.setPlayerTerritoryCenter(p.smallID(), loc.x, loc.y);

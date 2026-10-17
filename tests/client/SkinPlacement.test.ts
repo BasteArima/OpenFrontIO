@@ -66,4 +66,28 @@ describe("skinPlacement", () => {
       ...skinPlacement({ ...base, center: null, display }).slice(0, 2),
     ]).toEqual([300, 200]);
   });
+
+  test("country covers the box at 100% and scales with the setting", () => {
+    const box = { x: 100, y: 100, w: 400, h: 100 };
+    const p = skinPlacement({ ...base, box, display: { mode: "country" } });
+    // Centred on the box; a 2:1 picture must reach 400 wide to cover it.
+    expect([p[0], p[1]]).toEqual([300, 150]);
+    expect(p[4]).toBeCloseTo(0.4);
+    const half = skinPlacement({
+      ...base,
+      box,
+      display: { mode: "country", size: 50 },
+    });
+    expect(half[4]).toBeCloseTo(0.2);
+  });
+
+  test("country without a box yet sits on the spawn", () => {
+    const p = skinPlacement({
+      ...base,
+      center: null,
+      box: null,
+      display: { mode: "country" },
+    });
+    expect([p[0], p[1]]).toEqual([300, 200]);
+  });
 });

@@ -13,6 +13,9 @@
  *
  * Players without a display setting get the original behaviour: the picture
  * at 1 pixel per tile, centred on their spawn.
+ *
+ * "country" covers the bounding box of the player's main landmass (size =
+ * percent of it), so the picture grows and moves with the country.
  */
 
 export type SkinDisplayMode =
@@ -20,7 +23,15 @@ export type SkinDisplayMode =
   | "mapCenter"
   | "territory"
   | "tile"
-  | "fitMap";
+  | "fitMap"
+  | "country";
+
+export interface SkinBox {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
 
 export interface SkinDisplaySetting {
   mode: SkinDisplayMode;
@@ -34,6 +45,8 @@ export interface SkinPlacementInput {
   image: { width: number; height: number } | null;
   spawn: { x: number; y: number } | null;
   center: { x: number; y: number } | null;
+  /** The country's bounding box, for "country". */
+  box?: SkinBox | null;
   mapW: number;
   mapH: number;
   layerSize: number;
@@ -44,12 +57,15 @@ export function skinPlacement(i: SkinPlacementInput): Float32Array {
   const mode = i.display?.mode ?? "spawn";
   const out = new Float32Array(8);
 
+  const box = mode === "country" ? (i.box ?? null) : null;
   const anchor =
     mode === "mapCenter" || mode === "fitMap"
       ? { x: i.mapW / 2, y: i.mapH / 2 }
-      : mode === "territory"
-        ? (i.center ?? i.spawn)
-        : i.spawn;
+      : box !== null
+        ? { x: box.x + box.w / 2, y: box.y + box.h / 2 }
+        : mode === "territory" || mode === "country"
+          ? (i.center ?? i.spawn)
+          : i.spawn;
   out[0] = anchor?.x ?? 0;
   out[1] = anchor?.y ?? 0;
 
@@ -73,6 +89,11 @@ export function skinPlacement(i: SkinPlacementInput): Float32Array {
   let zoom = 1;
   if (mode === "fitMap") {
     zoom = Math.max(i.mapW / drawnW, i.mapH / drawnH);
+  } else if (mode === "country") {
+    const bw = box?.w ?? 64;
+    const bh = box?.h ?? 64;
+    zoom =
+      ((i.display?.size ?? 100) / 100) * Math.max(bw / drawnW, bh / drawnH);
   } else if (i.display?.size !== undefined) {
     zoom = i.display.size / Math.max(drawnW, drawnH);
   }

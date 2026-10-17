@@ -133,10 +133,13 @@ export const SKIN_DISPLAY_MODES = [
   "territory",
   "tile",
   "fitMap",
+  // Appended (wire enums are ordinal): covers the country and grows with it.
+  "country",
 ] as const;
 export const SkinDisplaySchema = z.object({
   mode: z.enum(SKIN_DISPLAY_MODES),
-  // Long side in map tiles (stamp modes) or of one tile (tile mode).
+  // Long side in map tiles (stamp modes) or of one tile (tile mode); for
+  // "country", percent of the country's extent.
   size: zb.uint({ min: 8, max: 4096 }).optional(),
 });
 export type SkinDisplay = z.infer<typeof SkinDisplaySchema>;

@@ -85,7 +85,11 @@ import {
   type GPUResources,
 } from "./utils/GpuResources";
 import { HeatManager } from "./utils/HeatManager";
-import { SkinDisplaySetting, skinPlacement } from "./utils/SkinPlacement";
+import {
+  SkinDisplaySetting,
+  skinPlacement,
+  type SkinBox,
+} from "./utils/SkinPlacement";
 
 /** Ghost types that trigger SAM radius overlay (matches upstream SAMRadiusLayer). */
 const SAM_RADIUS_GHOST_TYPES = new Set([
@@ -188,8 +192,14 @@ export class GPURenderer {
       display: SkinDisplaySetting | undefined;
       spawn: { x: number; y: number } | null;
       center: { x: number; y: number } | null;
+      /** "country": the box aimed at, and the one on screen easing to it. */
+      box: SkinBox | null;
+      shownBox: SkinBox | null;
     }
   >();
+  /** Players whose shown country box is still easing towards the target. */
+  private readonly skinBoxEasing = new Set<number>();
+  private skinEaseLast = 0;
   private readonly skinImageSize = new Map<
     string,
     { width: number; height: number }
@@ -872,16 +882,77 @@ export class GPURenderer {
     if (state.display?.mode === "territory") this.updateSkinPlacement(smallID);
   }
 
+  /**
+   * The bounding box of a player's main landmass (the "country" skin mode).
+   * It arrives every few seconds; the picture eases to it over ~1 s instead
+   * of jumping.
+   */
+  setPlayerTerritoryBox(smallID: number, box: SkinBox): void {
+    const state = this.skinStateOf(smallID);
+    state.box = { ...box };
+    if (state.display?.mode !== "country") return;
+    if (state.shownBox === null) {
+      state.shownBox = { ...box };
+      this.updateSkinPlacement(smallID);
+    } else {
+      this.skinBoxEasing.add(smallID);
+    }
+  }
+
+  private easeSkinBoxes(): void {
+    const now = performance.now();
+    const dt = Math.min(0.25, (now - this.skinEaseLast) / 1000);
+    this.skinEaseLast = now;
+    if (this.skinBoxEasing.size === 0) return;
+    const a = 1 - Math.exp(-dt / 0.35);
+    for (const smallID of this.skinBoxEasing) {
+      const state = this.skinStateOf(smallID);
+      const to = state.box;
+      const cur = state.shownBox;
+      if (to === null || cur === null) {
+        this.skinBoxEasing.delete(smallID);
+        continue;
+      }
+      cur.x += (to.x - cur.x) * a;
+      cur.y += (to.y - cur.y) * a;
+      cur.w += (to.w - cur.w) * a;
+      cur.h += (to.h - cur.h) * a;
+      const near =
+        Math.abs(to.x - cur.x) < 0.2 &&
+        Math.abs(to.y - cur.y) < 0.2 &&
+        Math.abs(to.w - cur.w) < 0.2 &&
+        Math.abs(to.h - cur.h) < 0.2;
+      if (near) {
+        state.shownBox = { ...to };
+        this.skinBoxEasing.delete(smallID);
+      }
+      this.writeSkinPlacement(smallID);
+    }
+    this.uploadSkinPlacement();
+  }
+
   private skinStateOf(smallID: number) {
     let state = this.skinState.get(smallID);
     if (state === undefined) {
-      state = { url: null, display: undefined, spawn: null, center: null };
+      state = {
+        url: null,
+        display: undefined,
+        spawn: null,
+        center: null,
+        box: null,
+        shownBox: null,
+      };
       this.skinState.set(smallID, state);
     }
     return state;
   }
 
   private updateSkinPlacement(smallID: number): void {
+    this.writeSkinPlacement(smallID);
+    this.uploadSkinPlacement();
+  }
+
+  private writeSkinPlacement(smallID: number): void {
     const state = this.skinStateOf(smallID);
     this.skinAnchorCpu.set(
       skinPlacement({
@@ -889,12 +960,16 @@ export class GPURenderer {
         image: state.url ? (this.skinImageSize.get(state.url) ?? null) : null,
         spawn: state.spawn,
         center: state.center,
+        box: state.shownBox ?? state.box,
         mapW: this.mapW,
         mapH: this.mapH,
         layerSize: SKIN_DIM,
       }),
       smallID * 8,
     );
+  }
+
+  private uploadSkinPlacement(): void {
     const gl = this.gl;
     gl.bindTexture(gl.TEXTURE_2D, this.skinAnchorTex);
     gl.texSubImage2D(
@@ -1337,6 +1412,7 @@ export class GPURenderer {
   // ---------------------------------------------------------------------------
 
   draw(): void {
+    this.easeSkinBoxes();
     this.uploadTextures();
     this.computeTextures();
     this.renderFrame();

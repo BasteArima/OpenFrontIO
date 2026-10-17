@@ -36,11 +36,22 @@ const DISPLAY_MODES: DisplayMode[] = [
   "territory",
   "mapCenter",
   "tile",
+  "country",
   "fitMap",
 ];
 // Slider ranges, in map tiles: the picture's long side, or one tile's.
 const STAMP_SIZE = { min: 32, max: 2048, step: 16 };
 const TILE_SIZE = { min: 16, max: 512, step: 8 };
+// Percent of the country's extent ("country" mode).
+const COUNTRY_SIZE = { min: 25, max: 300, step: 5, initial: 100 };
+
+function sizeRange(mode: DisplayMode) {
+  return mode === "tile"
+    ? TILE_SIZE
+    : mode === "country"
+      ? COUNTRY_SIZE
+      : STAMP_SIZE;
+}
 
 /**
  * Self-hosted servers only: upload your own skin, flag or pattern to the
@@ -124,12 +135,25 @@ export class SkinUploadModal extends LitElement {
   }
 
   private setMode(mode: DisplayMode) {
+    // Percent and tile counts don't translate: entering or leaving "country"
+    // starts from that side's default.
+    if ((mode === "country") !== (this.displayMode === "country")) {
+      this.displaySize =
+        mode === "country" ? COUNTRY_SIZE.initial : this.stampDefault();
+    }
     this.displayMode = mode;
-    const range = mode === "tile" ? TILE_SIZE : STAMP_SIZE;
+    const range = sizeRange(mode);
     this.displaySize = Math.min(
       range.max,
       Math.max(range.min, this.displaySize),
     );
+  }
+
+  /** Picture size for stamp modes: its own long side, within the slider. */
+  private stampDefault(): number {
+    const img = this.image;
+    const long = img ? Math.max(img.naturalWidth, img.naturalHeight) : 256;
+    return Math.min(STAMP_SIZE.max, Math.max(STAMP_SIZE.min, long));
   }
 
   private async startEdit(item: UploadedItem) {
@@ -142,7 +166,10 @@ export class SkinUploadModal extends LitElement {
       this.image = img;
       this.displayMode = item.display?.mode ?? "spawn";
       this.displaySize =
-        item.display?.size ?? Math.max(img.naturalWidth, img.naturalHeight);
+        item.display?.size ??
+        (this.displayMode === "country"
+          ? COUNTRY_SIZE.initial
+          : this.stampDefault());
       this.querySelector("[data-upload-form]")?.scrollIntoView({
         block: "start",
       });
@@ -344,12 +371,12 @@ export class SkinUploadModal extends LitElement {
   }
 
   private renderSkinDisplay(img: HTMLImageElement): TemplateResult {
-    const range = this.displayMode === "tile" ? TILE_SIZE : STAMP_SIZE;
+    const range = sizeRange(this.displayMode);
     return html`<div class="flex flex-col gap-3" data-skin-display>
       <div class="text-sm font-bold text-white">
         ${translateText("skin_upload.display.title")}
       </div>
-      <div class="grid grid-cols-2 gap-2 sm:grid-cols-5">
+      <div class="grid grid-cols-2 gap-2 sm:grid-cols-3">
         ${DISPLAY_MODES.map(
           (mode) =>
             html`<button
@@ -375,7 +402,9 @@ export class SkinUploadModal extends LitElement {
               >${translateText(
                 this.displayMode === "tile"
                   ? "skin_upload.display.tile_size"
-                  : "skin_upload.display.size",
+                  : this.displayMode === "country"
+                    ? "skin_upload.display.country_size"
+                    : "skin_upload.display.size",
                 { n: this.displaySize },
               )}</span
             >
