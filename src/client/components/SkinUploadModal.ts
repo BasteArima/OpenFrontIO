@@ -32,12 +32,12 @@ const FLAG_MAX = { w: 256, h: 170 };
 
 type DisplayMode = SkinDisplay["mode"];
 const DISPLAY_MODES: DisplayMode[] = [
-  "spawn",
-  "territory",
-  "mapCenter",
-  "tile",
   "country",
   "fitMap",
+  "tile",
+  "mapCenter",
+  "spawn",
+  "territory",
 ];
 // Slider ranges, in map tiles: the picture's long side, or one tile's.
 const STAMP_SIZE = { min: 32, max: 2048, step: 16 };
@@ -74,8 +74,8 @@ export class SkinUploadModal extends LitElement {
   @state() private cellScale = 1;
   @state() private busy = false;
   @state() private status: { ok: boolean; text: string } | null = null;
-  @state() private displayMode: DisplayMode = "spawn";
-  @state() private displaySize = 256;
+  @state() private displayMode: DisplayMode = "country";
+  @state() private displaySize = COUNTRY_SIZE.initial;
   /** Set while changing how one of my skins is displayed. */
   @state() private editing: UploadedItem | null = null;
   @state() private mine: UploadedItem[] = [];
