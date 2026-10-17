@@ -908,8 +908,11 @@ export class HostLobbyModal extends BaseModal {
   }
 
   private async handleSelectRandomMap() {
+    // Clicking Random again rerolls to a different map.
+    this.selectedMap = getRandomMapType(
+      this.useRandomMap ? this.selectedMap : undefined,
+    );
     this.useRandomMap = true;
-    this.selectedMap = getRandomMapType();
     await this.loadNationCount();
     this.putGameConfig();
   }

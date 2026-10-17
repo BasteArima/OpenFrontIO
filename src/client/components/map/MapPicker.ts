@@ -10,6 +10,7 @@ import {
   MapInfo,
   maps,
 } from "../../../core/game/Game";
+import { terrainMapFileLoader } from "../../TerrainMapFileLoader";
 import { translateText } from "../../Utils";
 import "./MapDisplay";
 import { getFavoriteMaps, starIcon, toggleFavoriteMap } from "./MapFavorites";
@@ -60,6 +61,65 @@ export class MapPicker extends LitElement {
   private handleSelectRandomMap = () => {
     this.onSelectRandom?.();
   };
+
+  // The Random card: a die until clicked, then the map it rolled (thumbnail
+  // and name) with the die as a corner badge. Clicking again rerolls.
+  private renderRandomCardContent() {
+    const rolled = this.useRandomMap
+      ? maps.find((m) => m.type === this.selectedMap)
+      : undefined;
+    if (rolled === undefined) {
+      return html`
+        <div
+          class="w-full aspect-[2/1] relative overflow-hidden rounded-lg bg-black/20"
+        >
+          <img
+            src=${randomMap}
+            alt=${translateText("map.random")}
+            draggable="false"
+            @dragstart=${this.preventImageDrag}
+            class="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity duration-200"
+          />
+        </div>
+        <div
+          class="text-xs font-bold text-white uppercase tracking-wider text-center leading-tight break-words hyphens-auto"
+        >
+          ${translateText("map.random")}
+        </div>
+      `;
+    }
+    const name = translateText(rolled.translationKey);
+    return html`
+      <div
+        class="w-full aspect-[2/1] relative overflow-hidden rounded-lg bg-black/20"
+      >
+        <img
+          src=${terrainMapFileLoader.getMapData(rolled.type).webpPath}
+          alt=${name}
+          draggable="false"
+          @dragstart=${this.preventImageDrag}
+          class="w-full h-full object-contain"
+        />
+        <img
+          src=${randomMap}
+          alt=""
+          draggable="false"
+          @dragstart=${this.preventImageDrag}
+          class="absolute top-1 right-1 w-8 h-8 rounded-md object-cover border border-white/30 shadow"
+        />
+      </div>
+      <div class="flex flex-col items-center gap-0.5">
+        <div
+          class="text-xs font-bold text-white uppercase tracking-wider text-center leading-tight break-words hyphens-auto"
+        >
+          ${translateText("map.random")}: ${name}
+        </div>
+        <div class="text-[10px] text-white/50 text-center leading-tight">
+          ${translateText("map.random_reroll")}
+        </div>
+      </div>
+    `;
+  }
 
   private toggleCategory(categoryKey: string) {
     const expanded = new Set(this.expandedCategories);
@@ -349,24 +409,7 @@ export class MapPicker extends LitElement {
                 : "bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20 hover:-translate-y-1"}"
               @click=${this.handleSelectRandomMap}
             >
-              <div
-                class="w-full aspect-[2/1] relative overflow-hidden rounded-lg bg-black/20"
-              >
-                <img
-                  src=${randomMap}
-                  alt=${translateText("map.random")}
-                  draggable="false"
-                  @dragstart=${this.preventImageDrag}
-                  class="w-full h-full object-cover ${this.useRandomMap
-                    ? "opacity-100"
-                    : "opacity-80"} group-hover:opacity-100 transition-opacity duration-200"
-                />
-              </div>
-              <div
-                class="text-xs font-bold text-white uppercase tracking-wider text-center leading-tight break-words hyphens-auto"
-              >
-                ${translateText("map.random")}
-              </div>
+              ${this.renderRandomCardContent()}
             </button>
           </div>
         </div>

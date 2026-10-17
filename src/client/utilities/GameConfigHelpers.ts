@@ -123,8 +123,9 @@ export function getNationsForCompactMap(
   return nations;
 }
 
-export function getRandomMapType(): GameMapType {
-  const maps = Object.values(GameMapType);
+// `exclude` keeps a reroll from landing on the map it is replacing.
+export function getRandomMapType(exclude?: GameMapType): GameMapType {
+  const maps = Object.values(GameMapType).filter((m) => m !== exclude);
   const randIdx = Math.floor(Math.random() * maps.length);
   return maps[randIdx] as GameMapType;
 }

@@ -704,8 +704,11 @@ export class SinglePlayerModal extends BaseModal {
   }
 
   private handleSelectRandomMap() {
+    // Clicking Random again rerolls to a different map.
+    this.selectedMap = getRandomMapType(
+      this.useRandomMap ? this.selectedMap : undefined,
+    );
     this.useRandomMap = true;
-    this.selectedMap = getRandomMapType();
     void this.loadNationCount();
   }
 
