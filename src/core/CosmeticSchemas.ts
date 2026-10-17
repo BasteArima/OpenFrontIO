@@ -96,6 +96,9 @@ const CosmeticSchema = z.object({
   priceSoft: z.number().optional(),
   priceHard: z.number().optional(),
   artist: z.string().optional(),
+  // Shown instead of the translated name when present. Set on self-hosted
+  // player uploads, whose names are generated ids.
+  displayName: z.string().max(40).optional(),
   rarity: z
     .enum(["common", "uncommon", "rare", "epic", "legendary"])
     .or(z.string()),

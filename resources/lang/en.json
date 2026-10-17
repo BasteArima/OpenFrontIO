@@ -1916,6 +1916,52 @@
     "sign_in_for_achievements": "Sign in for achievements",
     "toggle_achievements": "Toggle achievements"
   },
+  "skin_upload": {
+    "cell_scale": "Map tiles per cell",
+    "cells": "Detail (cells across)",
+    "choose_file": "Choose a picture",
+    "delete": "Delete",
+    "delete_confirm": "Delete \"{title}\"? Players using it will lose it.",
+    "done": "Uploaded! It is in your inventory now — for everyone.",
+    "error": {
+      "bad_image": "That doesn't look like a picture.",
+      "bad_pattern": "Couldn't make a pattern from this picture.",
+      "bad_request": "Something is missing in the upload.",
+      "gallery_full": "The gallery is full.",
+      "limit_reached": "You've reached the upload limit — delete one of yours first.",
+      "network": "Couldn't reach the server.",
+      "not_found": "That upload no longer exists.",
+      "not_yours": "You can only delete your own uploads.",
+      "server_error": "The server couldn't save it. Try again.",
+      "too_big": "The file is larger than 10 MB.",
+      "too_large_image": "The picture is too large.",
+      "wrong_password": "Wrong upload password."
+    },
+    "flag_size": "{w}×{h} px",
+    "hint": {
+      "flag": "Shown next to your name on the map. Best with a 3:2 picture.",
+      "pattern": "Turned into a two-colour tile repeated over your territory. Tune detail and threshold until the preview looks right; the colours come from the palette you pick in the inventory.",
+      "skin": "Drawn once on your territory, centred on where you spawn: 1 pixel = 1 map tile (up to 1024×1024). Transparent parts show your colour."
+    },
+    "invert": "Swap colours",
+    "kind": {
+      "flag": "Flag",
+      "pattern": "Pattern",
+      "skin": "Territory skin"
+    },
+    "mine": "My uploads ({n}/{max})",
+    "mine_empty": "You haven't uploaded anything yet.",
+    "name": "Name",
+    "no_file": "No file chosen",
+    "open": "Upload your own picture",
+    "password": "Upload password",
+    "pattern_size": "{w}×{h} cells",
+    "skin_size": "{w}×{h} map tiles",
+    "threshold": "Threshold",
+    "title": "Your own pictures",
+    "upload": "Upload",
+    "uploading": "Uploading…"
+  },
   "spawn_timer": {
     "team_percent_tooltip": "{team}: {percent}"
   },

@@ -13,6 +13,15 @@ export function cosmeticDisplayName(resolved: ResolvedCosmetic): string {
   if (resolved.type === "flag" && resolved.key === "country:xx") {
     return translateText("common.none");
   }
+  // Self-hosted uploads carry their own title.
+  const titled = (cosmetic as { displayName?: string }).displayName;
+  if (
+    titled !== undefined &&
+    resolved.type !== "pack" &&
+    resolved.type !== "cosmeticPack"
+  ) {
+    return titled;
+  }
   if (resolved.type === "pattern" || resolved.type === "skin") {
     return translateCosmetic("territory_patterns.pattern", cosmetic.name);
   }

@@ -40,10 +40,12 @@ import type {
 } from "./components/InventoryLoadoutBar";
 import "./components/InventoryLoadoutMenu";
 import { ProgressiveList } from "./components/ProgressiveList";
+import "./components/SkinUploadModal";
 import { modalHeader } from "./components/ui/ModalHeader";
 import {
   fetchCosmetics,
   groupCosmeticVariants,
+  invalidateCosmetics,
   resolveCosmetics,
   ResolvedCosmetic,
   resolvedToPlayerPattern,
@@ -74,6 +76,7 @@ export class InventoryModal extends BaseModal {
   @state() private loadFailed = false;
   @state() private ownershipState: OwnershipState = "loading";
   @state() private previewingCosmetic: ResolvedCosmetic | null = null;
+  @state() private uploadOpen = false;
 
   private cosmetics: Cosmetics | null = null;
   private userSettings: UserSettings = new UserSettings();
@@ -249,6 +252,18 @@ export class InventoryModal extends BaseModal {
 
   async onUserMe(userMeResponse: UserMeResponse | false) {
     await this.loadInventory(userMeResponse);
+  }
+
+  // Uploads have generated names; their title is what players search for.
+  private matchesSearch(cosmetic: {
+    name: string;
+    displayName?: string;
+  }): boolean {
+    return (
+      this.includedInSearch(cosmetic.name) ||
+      (cosmetic.displayName !== undefined &&
+        this.includedInSearch(cosmetic.displayName))
+    );
   }
 
   private includedInSearch(name: string): boolean {
@@ -474,7 +489,7 @@ export class InventoryModal extends BaseModal {
         (r.type === "pattern" || r.type === "skin") &&
         r.relationship === "owned" &&
         r.cosmetic !== null &&
-        this.includedInSearch(r.cosmetic.name),
+        this.matchesSearch(r.cosmetic),
     );
 
     const page = this.pages.page(
@@ -519,7 +534,7 @@ export class InventoryModal extends BaseModal {
         r.type === "crown" &&
         r.relationship === "owned" &&
         r.cosmetic !== null &&
-        this.includedInSearch(r.cosmetic.name),
+        this.matchesSearch(r.cosmetic),
     );
 
     const page = this.pages.page("inventory-crowns", this.search, items);
@@ -553,12 +568,12 @@ export class InventoryModal extends BaseModal {
         r.type === "flag" &&
         r.relationship === "owned" &&
         r.cosmetic !== null &&
-        this.includedInSearch(r.cosmetic.name),
+        this.matchesSearch(r.cosmetic),
     );
 
     const countryFlags = this.countryFlagTiles.filter(
       (resolved) =>
-        this.includedInSearch(resolved.cosmetic!.name) ||
+        this.matchesSearch(resolved.cosmetic!) ||
         this.includedInSearch(resolved.key.slice("country:".length)),
     );
 
@@ -615,6 +630,25 @@ export class InventoryModal extends BaseModal {
     </div>`;
   }
 
+  // Self-hosted: players add their own skins, flags and patterns.
+  private renderUploadButton(): TemplateResult {
+    return html`<div class="flex justify-center px-3 pt-3">
+      <button
+        type="button"
+        data-inventory-upload
+        class="rounded-lg border border-malibu-blue/50 bg-malibu-blue/20 px-4 py-2 text-sm font-bold uppercase tracking-wider text-white transition-colors hover:bg-malibu-blue/30"
+        @click=${() => (this.uploadOpen = true)}
+      >
+        ${translateText("skin_upload.open")}
+      </button>
+    </div>`;
+  }
+
+  private async onUploadsChanged(): Promise<void> {
+    invalidateCosmetics();
+    await this.loadInventory();
+  }
+
   protected renderHeaderSlot() {
     const isLoggedIn = this.userMeResponse !== false;
     return html`
@@ -659,6 +693,13 @@ export class InventoryModal extends BaseModal {
           />
         </div>
       </div>
+      ${selfHostEnabled()
+        ? html`<skin-upload-modal
+            .open=${this.uploadOpen}
+            @close=${() => (this.uploadOpen = false)}
+            @uploads-changed=${() => void this.onUploadsChanged()}
+          ></skin-upload-modal>`
+        : nothing}
       ${this.previewingCosmetic
         ? html`<cosmetic-preview-modal
             .resolved=${this.previewingCosmetic}
@@ -735,6 +776,9 @@ export class InventoryModal extends BaseModal {
       </div>`;
     } else {
       grid = html`${this.renderUnequip("skins")}${this.renderSkinGrid()}`;
+    }
+    if (selfHostEnabled() && (tab === "flags" || tab === "skins" || !tab)) {
+      grid = html`${this.renderUploadButton()}${grid}`;
     }
     const category = tab as InventoryCategory;
     return html`

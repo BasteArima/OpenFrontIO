@@ -102,11 +102,20 @@ describe("self-host cosmetics catalog", () => {
     ).toBe(explosion.name);
   });
 
-  test("without the flares the same items are refused", () => {
+  test("a ref that doesn't check out is dropped, not the whole join", () => {
     const checker = new SelfHostPrivileges().get();
     const flag = Object.keys(catalog.flags)[0];
-    expect(checker.isAllowed([], { flag: `flag:${flag}` }).type).toBe(
-      "forbidden",
-    );
+    const result = checker.isAllowed([...SELFHOST_FLARES], {
+      flag: `flag:${flag}`,
+      skinName: "u_deleted00000",
+    });
+    expect(result.type).toBe("allowed");
+    if (result.type !== "allowed") return;
+    expect(result.cosmetics.skin).toBeUndefined();
+    expect(result.cosmetics.flag).toBeDefined();
+    // Without the flares nothing is granted, and the join still goes ahead.
+    const bare = checker.isAllowed([], { flag: `flag:${flag}` });
+    expect(bare.type).toBe("allowed");
+    if (bare.type === "allowed") expect(bare.cosmetics.flag).toBeUndefined();
   });
 });

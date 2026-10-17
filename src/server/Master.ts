@@ -5,6 +5,7 @@ import rateLimit from "express-rate-limit";
 import http from "http";
 import path from "path";
 import { fileURLToPath } from "url";
+import { selfHostEnabled } from "../core/SelfHost";
 import { GameEnv } from "../core/configuration/Config";
 import {
   applyCheckinState,
@@ -26,6 +27,7 @@ import { setNoStoreHeaders } from "./NoStoreHeaders";
 import { startPolling } from "./PollingLoop";
 import { renderAppShell } from "./RenderHtml";
 import { selfHostCatalogJson } from "./SelfHostCosmetics";
+import { registerSelfHostUploads } from "./SelfHostUploads";
 import { ServerEnv } from "./ServerEnv";
 import { applyStaticAssetCacheControl } from "./StaticAssetCache";
 
@@ -40,6 +42,11 @@ const log = logger.child({ comp: "m" });
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// Self-hosted uploads take multi-megabyte bodies, so they get their own
+// parser ahead of the app-wide one (100 KB).
+if (selfHostEnabled()) {
+  registerSelfHostUploads(app);
+}
 app.use(express.json());
 
 // Serve the shared app shell for the root document.
