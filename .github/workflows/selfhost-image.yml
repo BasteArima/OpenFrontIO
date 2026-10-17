@@ -55,5 +55,6 @@ jobs:
           build-args: |
             GIT_COMMIT=${{ steps.commit.outputs.short }}
             API_DOMAIN=openfront.baste.ru/_api
+            SELFHOST=1
           cache-from: type=gha
           cache-to: type=gha,mode=max

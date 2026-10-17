@@ -36,6 +36,9 @@ ENV GIT_COMMIT="$GIT_COMMIT"
 # builds point it at their own /_api, which answers 404 at once.
 ARG API_DOMAIN=
 ENV API_DOMAIN="$API_DOMAIN"
+# Self-hosted build: free local cosmetics catalog (src/core/SelfHost.ts).
+ARG SELFHOST=
+ENV SELFHOST="$SELFHOST"
 RUN npm run build-prod
 
 # Production dependencies stage - separate from build
@@ -94,6 +97,9 @@ ARG GIT_COMMIT=unknown
 RUN echo "$GIT_COMMIT" > static/commit.txt
 
 ENV GIT_COMMIT="$GIT_COMMIT"
+# The server reads it too (local cosmetics catalog, free for everyone).
+ARG SELFHOST=
+ENV SELFHOST="$SELFHOST"
 
 RUN <<'EOF' tee /usr/local/bin/start.sh
 #!/bin/sh

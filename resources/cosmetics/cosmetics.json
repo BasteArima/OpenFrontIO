@@ -1,0 +1,1298 @@
+{
+  "colorPalettes": {
+    "ember": {
+      "name": "ember",
+      "primaryColor": "#7a1f12",
+      "secondaryColor": "#ff8a1f"
+    },
+    "ocean": {
+      "name": "ocean",
+      "primaryColor": "#0d3b66",
+      "secondaryColor": "#4fc3f7"
+    },
+    "forest": {
+      "name": "forest",
+      "primaryColor": "#1f4d2b",
+      "secondaryColor": "#8bc34a"
+    },
+    "royal": {
+      "name": "royal",
+      "primaryColor": "#3b1f5c",
+      "secondaryColor": "#f5c542"
+    },
+    "arctic": {
+      "name": "arctic",
+      "primaryColor": "#dfe9f2",
+      "secondaryColor": "#5b8fb9"
+    },
+    "desert": {
+      "name": "desert",
+      "primaryColor": "#c9a66b",
+      "secondaryColor": "#7a4e1d"
+    },
+    "neon": {
+      "name": "neon",
+      "primaryColor": "#111827",
+      "secondaryColor": "#22ff88"
+    },
+    "candy": {
+      "name": "candy",
+      "primaryColor": "#ff9ecf",
+      "secondaryColor": "#ffffff"
+    },
+    "volcano": {
+      "name": "volcano",
+      "primaryColor": "#2b2b2b",
+      "secondaryColor": "#ff3d00"
+    },
+    "bastefront": {
+      "name": "bastefront",
+      "primaryColor": "#0084d1",
+      "secondaryColor": "#ff8a1f"
+    },
+    "graphite": {
+      "name": "graphite",
+      "primaryColor": "#e5e5e5",
+      "secondaryColor": "#3a3a3a"
+    },
+    "toxic": {
+      "name": "toxic",
+      "primaryColor": "#2e3b12",
+      "secondaryColor": "#c6ff00"
+    },
+    "sakura": {
+      "name": "sakura",
+      "primaryColor": "#ffd6e0",
+      "secondaryColor": "#d6336c"
+    },
+    "midnight": {
+      "name": "midnight",
+      "primaryColor": "#0b1020",
+      "secondaryColor": "#8ea2ff"
+    },
+    "gold": {
+      "name": "gold",
+      "primaryColor": "#4a3600",
+      "secondaryColor": "#ffd54a"
+    }
+  },
+  "patterns": {
+    "diag_stripes": {
+      "name": "diag_stripes",
+      "product": null,
+      "rarity": "common",
+      "artist": "BasteFront",
+      "pattern": "ADEYA4HAYDAYDAY",
+      "colorPalettes": [
+        {
+          "name": "bastefront",
+          "isArchived": false
+        },
+        {
+          "name": "volcano",
+          "isArchived": false
+        },
+        {
+          "name": "gold",
+          "isArchived": false
+        },
+        {
+          "name": "ocean",
+          "isArchived": false
+        },
+        {
+          "name": "candy",
+          "isArchived": false
+        }
+      ]
+    },
+    "pinstripes": {
+      "name": "pinstripes",
+      "product": null,
+      "rarity": "common",
+      "artist": "BasteFront",
+      "pattern": "ACEAQQA",
+      "colorPalettes": [
+        {
+          "name": "graphite",
+          "isArchived": false
+        },
+        {
+          "name": "midnight",
+          "isArchived": false
+        },
+        {
+          "name": "royal",
+          "isArchived": false
+        },
+        {
+          "name": "forest",
+          "isArchived": false
+        },
+        {
+          "name": "desert",
+          "isArchived": false
+        }
+      ]
+    },
+    "bands": {
+      "name": "bands",
+      "product": null,
+      "rarity": "common",
+      "artist": "BasteFront",
+      "pattern": "AAEgPwAA",
+      "colorPalettes": [
+        {
+          "name": "ocean",
+          "isArchived": false
+        },
+        {
+          "name": "ember",
+          "isArchived": false
+        },
+        {
+          "name": "sakura",
+          "isArchived": false
+        },
+        {
+          "name": "toxic",
+          "isArchived": false
+        },
+        {
+          "name": "bastefront",
+          "isArchived": false
+        }
+      ]
+    },
+    "checker": {
+      "name": "checker",
+      "product": null,
+      "rarity": "common",
+      "artist": "BasteFront",
+      "pattern": "ADEY8PDw8A8PDw8",
+      "colorPalettes": [
+        {
+          "name": "graphite",
+          "isArchived": false
+        },
+        {
+          "name": "volcano",
+          "isArchived": false
+        },
+        {
+          "name": "candy",
+          "isArchived": false
+        },
+        {
+          "name": "neon",
+          "isArchived": false
+        },
+        {
+          "name": "arctic",
+          "isArchived": false
+        }
+      ]
+    },
+    "polka": {
+      "name": "polka",
+      "product": null,
+      "rarity": "common",
+      "artist": "BasteFront",
+      "pattern": "ADEYAAAYPDwYAAA",
+      "colorPalettes": [
+        {
+          "name": "candy",
+          "isArchived": false
+        },
+        {
+          "name": "sakura",
+          "isArchived": false
+        },
+        {
+          "name": "midnight",
+          "isArchived": false
+        },
+        {
+          "name": "gold",
+          "isArchived": false
+        },
+        {
+          "name": "ocean",
+          "isArchived": false
+        }
+      ]
+    },
+    "grid": {
+      "name": "grid",
+      "product": null,
+      "rarity": "common",
+      "artist": "BasteFront",
+      "pattern": "AEEg_wcQQAABBBBAAAEEAA",
+      "colorPalettes": [
+        {
+          "name": "neon",
+          "isArchived": false
+        },
+        {
+          "name": "midnight",
+          "isArchived": false
+        },
+        {
+          "name": "arctic",
+          "isArchived": false
+        },
+        {
+          "name": "graphite",
+          "isArchived": false
+        },
+        {
+          "name": "toxic",
+          "isArchived": false
+        }
+      ]
+    },
+    "bricks": {
+      "name": "bricks",
+      "product": null,
+      "rarity": "common",
+      "artist": "BasteFront",
+      "pattern": "AFEQ_x8AAfD_QAAE",
+      "colorPalettes": [
+        {
+          "name": "desert",
+          "isArchived": false
+        },
+        {
+          "name": "ember",
+          "isArchived": false
+        },
+        {
+          "name": "graphite",
+          "isArchived": false
+        },
+        {
+          "name": "volcano",
+          "isArchived": false
+        },
+        {
+          "name": "arctic",
+          "isArchived": false
+        }
+      ]
+    },
+    "waves": {
+      "name": "waves",
+      "product": null,
+      "rarity": "common",
+      "artist": "BasteFront",
+      "pattern": "ALE4AAAAAAAfAMB_AODgAziADg4A_AcA8AEAAAAAAAAfAMB_AODgAziADg4A_AcA8AEA",
+      "colorPalettes": [
+        {
+          "name": "ocean",
+          "isArchived": false
+        },
+        {
+          "name": "arctic",
+          "isArchived": false
+        },
+        {
+          "name": "midnight",
+          "isArchived": false
+        },
+        {
+          "name": "candy",
+          "isArchived": false
+        },
+        {
+          "name": "toxic",
+          "isArchived": false
+        }
+      ]
+    },
+    "zigzag": {
+      "name": "zigzag",
+      "product": null,
+      "rarity": "common",
+      "artist": "BasteFront",
+      "pattern": "AFEYAAAO-OPxBxwAAAAA",
+      "colorPalettes": [
+        {
+          "name": "royal",
+          "isArchived": false
+        },
+        {
+          "name": "gold",
+          "isArchived": false
+        },
+        {
+          "name": "volcano",
+          "isArchived": false
+        },
+        {
+          "name": "neon",
+          "isArchived": false
+        },
+        {
+          "name": "sakura",
+          "isArchived": false
+        }
+      ]
+    },
+    "argyle": {
+      "name": "argyle",
+      "product": null,
+      "rarity": "common",
+      "artist": "BasteFront",
+      "pattern": "AHE4AAGAA8AGYAwwGBgwDGAGwAOABsAMYBgwMBhgDMAGgAM",
+      "colorPalettes": [
+        {
+          "name": "royal",
+          "isArchived": false
+        },
+        {
+          "name": "forest",
+          "isArchived": false
+        },
+        {
+          "name": "graphite",
+          "isArchived": false
+        },
+        {
+          "name": "sakura",
+          "isArchived": false
+        },
+        {
+          "name": "gold",
+          "isArchived": false
+        }
+      ]
+    },
+    "honeycomb": {
+      "name": "honeycomb",
+      "product": null,
+      "rarity": "uncommon",
+      "artist": "BasteFront",
+      "pattern": "AFEo-EEgAhSAAkQg-EEgAhSAAkQg",
+      "colorPalettes": [
+        {
+          "name": "gold",
+          "isArchived": false
+        },
+        {
+          "name": "toxic",
+          "isArchived": false
+        },
+        {
+          "name": "midnight",
+          "isArchived": false
+        },
+        {
+          "name": "desert",
+          "isArchived": false
+        },
+        {
+          "name": "bastefront",
+          "isArchived": false
+        }
+      ]
+    },
+    "camo": {
+      "name": "camo",
+      "product": null,
+      "rarity": "uncommon",
+      "artist": "BasteFront",
+      "pattern": "APJ4APgfAADgBzgA4AEYAPABDAD-gR_A_4Ef4P_DP-Df_z_AD_9_gAf_cIEDfOCHA0DA3wNA4J8HwOCfD8Dh3z_A4P9_QODDDwDggQ8A8IEPB_AADw_wAI4HeACMB_wFgAf8D4AH-A-AR_gPgAfwH4AHwB7DBwCc_x8AAP8_AAD-PwA",
+      "colorPalettes": [
+        {
+          "name": "forest",
+          "isArchived": false
+        },
+        {
+          "name": "desert",
+          "isArchived": false
+        },
+        {
+          "name": "arctic",
+          "isArchived": false
+        },
+        {
+          "name": "graphite",
+          "isArchived": false
+        },
+        {
+          "name": "volcano",
+          "isArchived": false
+        }
+      ]
+    },
+    "speckle": {
+      "name": "speckle",
+      "product": null,
+      "rarity": "common",
+      "artist": "BasteFront",
+      "pattern": "ALFYCAAyAEFQgCEAQAEAQEARQAEEgAYgEAhoCRAgABAAEAEEQAIgEAQCCKAAQBAYhgkAEgYAAgAAgIEAiAAgAAFwwAAAgCEUoABA",
+      "colorPalettes": [
+        {
+          "name": "graphite",
+          "isArchived": false
+        },
+        {
+          "name": "arctic",
+          "isArchived": false
+        },
+        {
+          "name": "desert",
+          "isArchived": false
+        },
+        {
+          "name": "midnight",
+          "isArchived": false
+        },
+        {
+          "name": "candy",
+          "isArchived": false
+        }
+      ]
+    },
+    "plaid": {
+      "name": "plaid",
+      "product": null,
+      "rarity": "common",
+      "artist": "BasteFront",
+      "pattern": "AHE4_____0MAQwBDAEMA__9DAEMAQwBDAEMAQwBDAEMAQwA",
+      "colorPalettes": [
+        {
+          "name": "ember",
+          "isArchived": false
+        },
+        {
+          "name": "forest",
+          "isArchived": false
+        },
+        {
+          "name": "royal",
+          "isArchived": false
+        },
+        {
+          "name": "ocean",
+          "isArchived": false
+        },
+        {
+          "name": "graphite",
+          "isArchived": false
+        }
+      ]
+    },
+    "rings": {
+      "name": "rings",
+      "product": null,
+      "rarity": "common",
+      "artist": "BasteFront",
+      "pattern": "AHE4AACAAfAPGBgMMAQghCHGY8ZjhCEEIAwwGBjwD4ABAAA",
+      "colorPalettes": [
+        {
+          "name": "arctic",
+          "isArchived": false
+        },
+        {
+          "name": "neon",
+          "isArchived": false
+        },
+        {
+          "name": "sakura",
+          "isArchived": false
+        },
+        {
+          "name": "gold",
+          "isArchived": false
+        },
+        {
+          "name": "ocean",
+          "isArchived": false
+        }
+      ]
+    },
+    "skulls": {
+      "name": "skulls",
+      "product": null,
+      "rarity": "rare",
+      "artist": "BasteFront",
+      "pattern": "AFEoAIAf_GNmZuZ_nIMfaAEAAAAA",
+      "colorPalettes": [
+        {
+          "name": "graphite",
+          "isArchived": false
+        },
+        {
+          "name": "volcano",
+          "isArchived": false
+        },
+        {
+          "name": "toxic",
+          "isArchived": false
+        },
+        {
+          "name": "midnight",
+          "isArchived": false
+        },
+        {
+          "name": "candy",
+          "isArchived": false
+        }
+      ]
+    },
+    "hearts": {
+      "name": "hearts",
+      "product": null,
+      "rarity": "rare",
+      "artist": "BasteFront",
+      "pattern": "AEEYADDjn3_84AEDAA",
+      "colorPalettes": [
+        {
+          "name": "candy",
+          "isArchived": false
+        },
+        {
+          "name": "sakura",
+          "isArchived": false
+        },
+        {
+          "name": "ember",
+          "isArchived": false
+        },
+        {
+          "name": "royal",
+          "isArchived": false
+        },
+        {
+          "name": "arctic",
+          "isArchived": false
+        }
+      ]
+    },
+    "parachutes": {
+      "name": "parachutes",
+      "product": null,
+      "rarity": "rare",
+      "artist": "BasteFront",
+      "pattern": "AFEoAAAP_ON_akUmaAEPYAAGAAAA",
+      "colorPalettes": [
+        {
+          "name": "bastefront",
+          "isArchived": false
+        },
+        {
+          "name": "ocean",
+          "isArchived": false
+        },
+        {
+          "name": "arctic",
+          "isArchived": false
+        },
+        {
+          "name": "gold",
+          "isArchived": false
+        },
+        {
+          "name": "neon",
+          "isArchived": false
+        }
+      ]
+    },
+    "stars": {
+      "name": "stars",
+      "product": null,
+      "rarity": "rare",
+      "artist": "BasteFront",
+      "pattern": "AGEoAAAQAASAA_8f_4E_4A4MBgAAAAAA",
+      "colorPalettes": [
+        {
+          "name": "midnight",
+          "isArchived": false
+        },
+        {
+          "name": "royal",
+          "isArchived": false
+        },
+        {
+          "name": "gold",
+          "isArchived": false
+        },
+        {
+          "name": "volcano",
+          "isArchived": false
+        },
+        {
+          "name": "ocean",
+          "isArchived": false
+        }
+      ]
+    },
+    "maze": {
+      "name": "maze",
+      "product": null,
+      "rarity": "uncommon",
+      "artist": "BasteFront",
+      "pattern": "APF4X1f1V0RQEVTfX93VEAVRFVX1V_VFBEQU_f19VwQREVX319fVAEAUUf99dV8BRRFBfVfffRVRUQRVXVX3VBVFFNf1_dURBUUUd_VVf1AFUEFX_V_dUQREBd33XXVBBBEV333X9QQQUQT3331_EEEVUV991dVERVREdV1XfVFRRUE",
+      "colorPalettes": [
+        {
+          "name": "neon",
+          "isArchived": false
+        },
+        {
+          "name": "graphite",
+          "isArchived": false
+        },
+        {
+          "name": "desert",
+          "isArchived": false
+        },
+        {
+          "name": "arctic",
+          "isArchived": false
+        },
+        {
+          "name": "toxic",
+          "isArchived": false
+        }
+      ]
+    }
+  },
+  "flags": {
+    "bastefront": {
+      "name": "bastefront",
+      "product": null,
+      "rarity": "rare",
+      "artist": "BasteFront",
+      "url": "/cosmetics/flags/bastefront.svg"
+    },
+    "pirate": {
+      "name": "pirate",
+      "product": null,
+      "rarity": "rare",
+      "artist": "BasteFront",
+      "url": "/cosmetics/flags/pirate.svg"
+    },
+    "rainbow": {
+      "name": "rainbow",
+      "product": null,
+      "rarity": "common",
+      "artist": "BasteFront",
+      "url": "/cosmetics/flags/rainbow.svg"
+    },
+    "checkered": {
+      "name": "checkered",
+      "product": null,
+      "rarity": "common",
+      "artist": "BasteFront",
+      "url": "/cosmetics/flags/checkered.svg"
+    },
+    "radioactive": {
+      "name": "radioactive",
+      "product": null,
+      "rarity": "uncommon",
+      "artist": "BasteFront",
+      "url": "/cosmetics/flags/radioactive.svg"
+    },
+    "toxic_green": {
+      "name": "toxic_green",
+      "product": null,
+      "rarity": "common",
+      "artist": "BasteFront",
+      "url": "/cosmetics/flags/toxic_green.svg"
+    },
+    "ocean_wave": {
+      "name": "ocean_wave",
+      "product": null,
+      "rarity": "common",
+      "artist": "BasteFront",
+      "url": "/cosmetics/flags/ocean_wave.svg"
+    },
+    "night_sky": {
+      "name": "night_sky",
+      "product": null,
+      "rarity": "common",
+      "artist": "BasteFront",
+      "url": "/cosmetics/flags/night_sky.svg"
+    }
+  },
+  "effects": {
+    "transportShipTrail": {
+      "boat_rainbow": {
+        "name": "boat_rainbow",
+        "product": null,
+        "rarity": "rare",
+        "artist": "BasteFront",
+        "effectType": "transportShipTrail",
+        "attributes": {
+          "type": "gradient",
+          "colors": [
+            "#ff3b30",
+            "#ff9500",
+            "#ffcc00",
+            "#34c759",
+            "#0a84ff",
+            "#af52de"
+          ],
+          "colorSize": 4,
+          "movementSpeed": 10
+        }
+      },
+      "boat_fire": {
+        "name": "boat_fire",
+        "product": null,
+        "rarity": "common",
+        "artist": "BasteFront",
+        "effectType": "transportShipTrail",
+        "attributes": {
+          "type": "gradient",
+          "colors": ["#ffe066", "#ff8a1f", "#e63946"],
+          "colorSize": 3,
+          "movementSpeed": 14
+        }
+      },
+      "boat_ice": {
+        "name": "boat_ice",
+        "product": null,
+        "rarity": "common",
+        "artist": "BasteFront",
+        "effectType": "transportShipTrail",
+        "attributes": {
+          "type": "gradient",
+          "colors": ["#ffffff", "#9be7ff", "#2f80ed"],
+          "colorSize": 5,
+          "movementSpeed": 6
+        }
+      },
+      "boat_police": {
+        "name": "boat_police",
+        "product": null,
+        "rarity": "uncommon",
+        "artist": "BasteFront",
+        "effectType": "transportShipTrail",
+        "attributes": {
+          "type": "transition",
+          "colors": ["#ff2d2d", "#2d6bff"],
+          "frequency": 4
+        }
+      },
+      "boat_dna": {
+        "name": "boat_dna",
+        "product": null,
+        "rarity": "rare",
+        "artist": "BasteFront",
+        "effectType": "transportShipTrail",
+        "attributes": {
+          "type": "spiral",
+          "colors": ["#00e5ff", "#ff00e5"],
+          "radius": 4,
+          "strands": 2,
+          "rotationSpeed": 4
+        }
+      },
+      "boat_toxic": {
+        "name": "boat_toxic",
+        "product": null,
+        "rarity": "common",
+        "artist": "BasteFront",
+        "effectType": "transportShipTrail",
+        "attributes": {
+          "type": "transition",
+          "colors": ["#c6ff00", "#2e7d32"],
+          "frequency": 1
+        }
+      }
+    },
+    "nukeTrail": {
+      "nuke_rainbow": {
+        "name": "nuke_rainbow",
+        "product": null,
+        "rarity": "rare",
+        "artist": "BasteFront",
+        "effectType": "nukeTrail",
+        "attributes": {
+          "type": "gradient",
+          "colors": [
+            "#ff3b30",
+            "#ff9500",
+            "#ffcc00",
+            "#34c759",
+            "#0a84ff",
+            "#af52de"
+          ],
+          "colorSize": 4,
+          "movementSpeed": 10
+        }
+      },
+      "nuke_fire": {
+        "name": "nuke_fire",
+        "product": null,
+        "rarity": "common",
+        "artist": "BasteFront",
+        "effectType": "nukeTrail",
+        "attributes": {
+          "type": "gradient",
+          "colors": ["#ffe066", "#ff8a1f", "#e63946"],
+          "colorSize": 3,
+          "movementSpeed": 14
+        }
+      },
+      "nuke_ice": {
+        "name": "nuke_ice",
+        "product": null,
+        "rarity": "common",
+        "artist": "BasteFront",
+        "effectType": "nukeTrail",
+        "attributes": {
+          "type": "gradient",
+          "colors": ["#ffffff", "#9be7ff", "#2f80ed"],
+          "colorSize": 5,
+          "movementSpeed": 6
+        }
+      },
+      "nuke_police": {
+        "name": "nuke_police",
+        "product": null,
+        "rarity": "uncommon",
+        "artist": "BasteFront",
+        "effectType": "nukeTrail",
+        "attributes": {
+          "type": "transition",
+          "colors": ["#ff2d2d", "#2d6bff"],
+          "frequency": 4
+        }
+      },
+      "nuke_dna": {
+        "name": "nuke_dna",
+        "product": null,
+        "rarity": "rare",
+        "artist": "BasteFront",
+        "effectType": "nukeTrail",
+        "attributes": {
+          "type": "spiral",
+          "colors": ["#00e5ff", "#ff00e5"],
+          "radius": 4,
+          "strands": 2,
+          "rotationSpeed": 4
+        }
+      },
+      "nuke_toxic": {
+        "name": "nuke_toxic",
+        "product": null,
+        "rarity": "common",
+        "artist": "BasteFront",
+        "effectType": "nukeTrail",
+        "attributes": {
+          "type": "transition",
+          "colors": ["#c6ff00", "#2e7d32"],
+          "frequency": 1
+        }
+      }
+    },
+    "nukeExplosion": {
+      "plasma_atom": {
+        "name": "plasma_atom",
+        "product": null,
+        "rarity": "uncommon",
+        "artist": "BasteFront",
+        "effectType": "nukeExplosion",
+        "attributes": {
+          "type": "shockwave",
+          "colors": ["#00e5ff", "#ff00e5"],
+          "nukeType": "atom",
+          "size": 210,
+          "speed": 140,
+          "thickness": 4,
+          "transitionSpeed": 0
+        }
+      },
+      "fireworks_atom": {
+        "name": "fireworks_atom",
+        "product": null,
+        "rarity": "rare",
+        "artist": "BasteFront",
+        "effectType": "nukeExplosion",
+        "attributes": {
+          "type": "sparkles",
+          "colors": [
+            "#ff3b30",
+            "#ff9500",
+            "#ffcc00",
+            "#34c759",
+            "#0a84ff",
+            "#af52de"
+          ],
+          "density": 300,
+          "nukeType": "atom",
+          "size": 210,
+          "speed": 140,
+          "thickness": 4,
+          "transitionSpeed": 0
+        }
+      },
+      "inferno_atom": {
+        "name": "inferno_atom",
+        "product": null,
+        "rarity": "rare",
+        "artist": "BasteFront",
+        "effectType": "nukeExplosion",
+        "attributes": {
+          "type": "embers",
+          "colors": ["#ffe066", "#ff8a1f", "#e63946"],
+          "density": 300,
+          "nukeType": "atom",
+          "size": 210,
+          "speed": 140,
+          "thickness": 4,
+          "transitionSpeed": 0
+        }
+      },
+      "frost_atom": {
+        "name": "frost_atom",
+        "product": null,
+        "rarity": "common",
+        "artist": "BasteFront",
+        "effectType": "nukeExplosion",
+        "attributes": {
+          "type": "shockwave",
+          "colors": ["#ffffff", "#9be7ff", "#2f80ed"],
+          "nukeType": "atom",
+          "size": 210,
+          "speed": 140,
+          "thickness": 4,
+          "transitionSpeed": 0
+        }
+      },
+      "plasma_hydro": {
+        "name": "plasma_hydro",
+        "product": null,
+        "rarity": "uncommon",
+        "artist": "BasteFront",
+        "effectType": "nukeExplosion",
+        "attributes": {
+          "type": "shockwave",
+          "colors": ["#00e5ff", "#ff00e5"],
+          "nukeType": "hydro",
+          "size": 210,
+          "speed": 140,
+          "thickness": 4,
+          "transitionSpeed": 0
+        }
+      },
+      "fireworks_hydro": {
+        "name": "fireworks_hydro",
+        "product": null,
+        "rarity": "rare",
+        "artist": "BasteFront",
+        "effectType": "nukeExplosion",
+        "attributes": {
+          "type": "sparkles",
+          "colors": [
+            "#ff3b30",
+            "#ff9500",
+            "#ffcc00",
+            "#34c759",
+            "#0a84ff",
+            "#af52de"
+          ],
+          "density": 300,
+          "nukeType": "hydro",
+          "size": 210,
+          "speed": 140,
+          "thickness": 4,
+          "transitionSpeed": 0
+        }
+      },
+      "inferno_hydro": {
+        "name": "inferno_hydro",
+        "product": null,
+        "rarity": "rare",
+        "artist": "BasteFront",
+        "effectType": "nukeExplosion",
+        "attributes": {
+          "type": "embers",
+          "colors": ["#ffe066", "#ff8a1f", "#e63946"],
+          "density": 300,
+          "nukeType": "hydro",
+          "size": 210,
+          "speed": 140,
+          "thickness": 4,
+          "transitionSpeed": 0
+        }
+      },
+      "frost_hydro": {
+        "name": "frost_hydro",
+        "product": null,
+        "rarity": "common",
+        "artist": "BasteFront",
+        "effectType": "nukeExplosion",
+        "attributes": {
+          "type": "shockwave",
+          "colors": ["#ffffff", "#9be7ff", "#2f80ed"],
+          "nukeType": "hydro",
+          "size": 210,
+          "speed": 140,
+          "thickness": 4,
+          "transitionSpeed": 0
+        }
+      },
+      "plasma_mirvwarhead": {
+        "name": "plasma_mirvwarhead",
+        "product": null,
+        "rarity": "uncommon",
+        "artist": "BasteFront",
+        "effectType": "nukeExplosion",
+        "attributes": {
+          "type": "shockwave",
+          "colors": ["#00e5ff", "#ff00e5"],
+          "nukeType": "mirvWarhead",
+          "size": 210,
+          "speed": 140,
+          "thickness": 4,
+          "transitionSpeed": 0
+        }
+      },
+      "fireworks_mirvwarhead": {
+        "name": "fireworks_mirvwarhead",
+        "product": null,
+        "rarity": "rare",
+        "artist": "BasteFront",
+        "effectType": "nukeExplosion",
+        "attributes": {
+          "type": "sparkles",
+          "colors": [
+            "#ff3b30",
+            "#ff9500",
+            "#ffcc00",
+            "#34c759",
+            "#0a84ff",
+            "#af52de"
+          ],
+          "density": 300,
+          "nukeType": "mirvWarhead",
+          "size": 210,
+          "speed": 140,
+          "thickness": 4,
+          "transitionSpeed": 0
+        }
+      },
+      "inferno_mirvwarhead": {
+        "name": "inferno_mirvwarhead",
+        "product": null,
+        "rarity": "rare",
+        "artist": "BasteFront",
+        "effectType": "nukeExplosion",
+        "attributes": {
+          "type": "embers",
+          "colors": ["#ffe066", "#ff8a1f", "#e63946"],
+          "density": 300,
+          "nukeType": "mirvWarhead",
+          "size": 210,
+          "speed": 140,
+          "thickness": 4,
+          "transitionSpeed": 0
+        }
+      },
+      "frost_mirvwarhead": {
+        "name": "frost_mirvwarhead",
+        "product": null,
+        "rarity": "common",
+        "artist": "BasteFront",
+        "effectType": "nukeExplosion",
+        "attributes": {
+          "type": "shockwave",
+          "colors": ["#ffffff", "#9be7ff", "#2f80ed"],
+          "nukeType": "mirvWarhead",
+          "size": 210,
+          "speed": 140,
+          "thickness": 4,
+          "transitionSpeed": 0
+        }
+      }
+    },
+    "structures": {
+      "city_rainbow": {
+        "name": "city_rainbow",
+        "product": null,
+        "rarity": "rare",
+        "artist": "BasteFront",
+        "effectType": "structures",
+        "attributes": {
+          "type": "gradient",
+          "colors": [
+            "#ff3b30",
+            "#ff9500",
+            "#ffcc00",
+            "#34c759",
+            "#0a84ff",
+            "#af52de"
+          ],
+          "colorSize": 4,
+          "movementSpeed": 10
+        }
+      },
+      "city_gold": {
+        "name": "city_gold",
+        "product": null,
+        "rarity": "uncommon",
+        "artist": "BasteFront",
+        "effectType": "structures",
+        "attributes": {
+          "type": "transition",
+          "colors": ["#ffd54a", "#fff3c4"],
+          "frequency": 1
+        }
+      },
+      "city_neon": {
+        "name": "city_neon",
+        "product": null,
+        "rarity": "common",
+        "artist": "BasteFront",
+        "effectType": "structures",
+        "attributes": {
+          "type": "transition",
+          "colors": ["#22ff88", "#00e5ff", "#ff00e5"],
+          "frequency": 2
+        }
+      }
+    },
+    "warship": {
+      "ship_rainbow": {
+        "name": "ship_rainbow",
+        "product": null,
+        "rarity": "rare",
+        "artist": "BasteFront",
+        "effectType": "warship",
+        "attributes": {
+          "type": "gradient",
+          "colors": [
+            "#ff3b30",
+            "#ff9500",
+            "#ffcc00",
+            "#34c759",
+            "#0a84ff",
+            "#af52de"
+          ],
+          "colorSize": 4,
+          "movementSpeed": 10
+        }
+      },
+      "ship_gold": {
+        "name": "ship_gold",
+        "product": null,
+        "rarity": "uncommon",
+        "artist": "BasteFront",
+        "effectType": "warship",
+        "attributes": {
+          "type": "transition",
+          "colors": ["#ffd54a", "#fff3c4"],
+          "frequency": 1
+        }
+      },
+      "ship_neon": {
+        "name": "ship_neon",
+        "product": null,
+        "rarity": "common",
+        "artist": "BasteFront",
+        "effectType": "warship",
+        "attributes": {
+          "type": "transition",
+          "colors": ["#22ff88", "#00e5ff", "#ff00e5"],
+          "frequency": 2
+        }
+      }
+    },
+    "train": {
+      "train_rainbow": {
+        "name": "train_rainbow",
+        "product": null,
+        "rarity": "rare",
+        "artist": "BasteFront",
+        "effectType": "train",
+        "attributes": {
+          "type": "gradient",
+          "colors": [
+            "#ff3b30",
+            "#ff9500",
+            "#ffcc00",
+            "#34c759",
+            "#0a84ff",
+            "#af52de"
+          ],
+          "colorSize": 4,
+          "movementSpeed": 10
+        }
+      },
+      "train_gold": {
+        "name": "train_gold",
+        "product": null,
+        "rarity": "uncommon",
+        "artist": "BasteFront",
+        "effectType": "train",
+        "attributes": {
+          "type": "transition",
+          "colors": ["#ffd54a", "#fff3c4"],
+          "frequency": 1
+        }
+      },
+      "train_neon": {
+        "name": "train_neon",
+        "product": null,
+        "rarity": "common",
+        "artist": "BasteFront",
+        "effectType": "train",
+        "attributes": {
+          "type": "transition",
+          "colors": ["#22ff88", "#00e5ff", "#ff00e5"],
+          "frequency": 2
+        }
+      }
+    },
+    "railroad": {
+      "rail_rainbow": {
+        "name": "rail_rainbow",
+        "product": null,
+        "rarity": "rare",
+        "artist": "BasteFront",
+        "effectType": "railroad",
+        "attributes": {
+          "type": "gradient",
+          "colors": [
+            "#ff3b30",
+            "#ff9500",
+            "#ffcc00",
+            "#34c759",
+            "#0a84ff",
+            "#af52de"
+          ],
+          "colorSize": 4,
+          "movementSpeed": 10
+        }
+      },
+      "rail_gold": {
+        "name": "rail_gold",
+        "product": null,
+        "rarity": "uncommon",
+        "artist": "BasteFront",
+        "effectType": "railroad",
+        "attributes": {
+          "type": "transition",
+          "colors": ["#ffd54a", "#fff3c4"],
+          "frequency": 1
+        }
+      },
+      "rail_neon": {
+        "name": "rail_neon",
+        "product": null,
+        "rarity": "common",
+        "artist": "BasteFront",
+        "effectType": "railroad",
+        "attributes": {
+          "type": "transition",
+          "colors": ["#22ff88", "#00e5ff", "#ff00e5"],
+          "frequency": 2
+        }
+      }
+    }
+  }
+}

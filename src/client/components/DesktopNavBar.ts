@@ -1,6 +1,7 @@
 import { LitElement, html } from "lit";
 import { customElement } from "lit/decorators.js";
 import { assetUrl } from "../../core/AssetUrls";
+import { selfHostEnabled } from "../../core/SelfHost";
 import "./NavAccountMenu";
 import { NavNotificationsController } from "./NavNotificationsController";
 import "./NavUtilityIcons";
@@ -75,7 +76,9 @@ export class DesktopNavBar extends LitElement {
           data-i18n="main.play"
         ></button>
         <!-- Desktop Navigation Menu Items -->
-        <div class="relative no-crazygames">
+        <div
+          class="relative no-crazygames ${selfHostEnabled() ? "hidden" : ""}"
+        >
           <button
             class="nav-menu-item ${currentPage === "page-item-store"
               ? "active"

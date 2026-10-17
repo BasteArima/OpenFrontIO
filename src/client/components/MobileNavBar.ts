@@ -1,6 +1,7 @@
 import { html, LitElement, TemplateResult } from "lit";
 import { customElement } from "lit/decorators.js";
 import { assetUrl } from "../../core/AssetUrls";
+import { selfHostEnabled } from "../../core/SelfHost";
 import { NavNotificationsController } from "./NavNotificationsController";
 
 const MOBILE_ITEM =
@@ -103,7 +104,9 @@ export class MobileNavBar extends LitElement {
           data-i18n="main.play"
         ></button>
         <div
-          class="no-crazygames nav-menu-item flex items-center w-full cursor-pointer"
+          class="no-crazygames nav-menu-item flex items-center w-full cursor-pointer ${selfHostEnabled()
+            ? "hidden"
+            : ""}"
           data-page="page-item-store"
           @click=${this._notifications.onStoreClick}
         >

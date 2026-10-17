@@ -26,6 +26,7 @@ import {
   PlayerEffect,
   PlayerPattern,
 } from "../core/Schemas";
+import { SELFHOST_FLARES, selfHostEnabled } from "../core/SelfHost";
 import {
   changeSubscriptionTier,
   getApiBase,
@@ -891,6 +892,16 @@ export async function getCosmeticsHash(): Promise<string | null> {
   return __cosmeticsHash;
 }
 
+// The flares (ownership grants) a player has. On a self-hosted server there are
+// no accounts and every cosmetic is free, so everyone holds the wildcards.
+export function playerFlares(
+  userMeResponse: UserMeResponse | false,
+): readonly string[] {
+  const own =
+    userMeResponse === false ? [] : (userMeResponse.player.flares ?? []);
+  return selfHostEnabled() ? [...own, ...SELFHOST_FLARES] : own;
+}
+
 export function cosmeticRelationship(
   opts: {
     wildcardFlare: string;
@@ -902,8 +913,7 @@ export function cosmeticRelationship(
   },
   userMeResponse: UserMeResponse | false,
 ): "owned" | "purchasable" | "blocked" {
-  const flares =
-    userMeResponse === false ? [] : (userMeResponse.player.flares ?? []);
+  const flares = playerFlares(userMeResponse);
 
   if (flares.includes(opts.wildcardFlare)) {
     return "owned";
@@ -933,8 +943,7 @@ export function patternRelationship(
 ): "owned" | "purchasable" | "blocked" {
   if (colorPalette === null) {
     // For backwards compatibility only show non-colored patterns if they are owned.
-    const flares =
-      userMeResponse === false ? [] : (userMeResponse.player.flares ?? []);
+    const flares = playerFlares(userMeResponse);
     if (
       flares.includes("pattern:*") ||
       flares.includes(`pattern:${pattern.name}`)
@@ -946,8 +955,7 @@ export function patternRelationship(
 
   if (colorPalette.isArchived) {
     // Check ownership first — if owned, show it even if archived.
-    const flares =
-      userMeResponse === false ? [] : (userMeResponse.player.flares ?? []);
+    const flares = playerFlares(userMeResponse);
     if (
       flares.includes("pattern:*") ||
       flares.includes(`pattern:${pattern.name}:${colorPalette.name}`)
@@ -1076,8 +1084,7 @@ export function ownedPackItems(
   pack: CosmeticPack,
   userMeResponse: UserMeResponse | false,
 ): CosmeticPackItem[] {
-  const flares =
-    userMeResponse === false ? [] : (userMeResponse.player.flares ?? []);
+  const flares = playerFlares(userMeResponse);
   return pack.items.filter(
     (item) =>
       flares.includes(packItemFlare(item)) || flares.includes(`${item.type}:*`),
@@ -1272,8 +1279,7 @@ export function resolveCosmetics(
   }
 
   // Subscriptions
-  const flares =
-    userMeResponse === false ? [] : (userMeResponse.player.flares ?? []);
+  const flares = playerFlares(userMeResponse);
   const currentSub =
     userMeResponse === false
       ? null
@@ -1430,8 +1436,9 @@ export async function getPlayerCosmeticsRefs(
         // CosmeticsForbidden), so sending it would trade a lost flag for an
         // unjoinable multiplayer. The pattern, skin and crown branches nearby
         // do send theirs on an unknown profile and carry that exposure; this
-        // one deliberately does not.
-        flag = null;
+        // one deliberately does not. A self-hosted server grants every
+        // flag to everyone, so there the flag is sent.
+        if (!selfHostEnabled()) flag = null;
       }
     }
   }

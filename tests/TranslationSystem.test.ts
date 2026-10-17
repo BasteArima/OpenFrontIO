@@ -24,6 +24,9 @@ const DYNAMIC_KEY_PATTERNS: RegExp[] = [
   /^territory_patterns\.pattern\.[^.]+$/,
   /^territory_patterns\.pattern_owned\.[^.]+$/,
   /^territory_patterns\.color_palette\.[^.]+$/,
+  // Cosmetic names, resolved through translateCosmetic(prefix, name).
+  /^flags\.[^.]+$/,
+  /^effects\.[^.]+$/,
   /^build_menu\.desc\.[^.]+$/,
   /^unit_type\.[^.]+$/,
   /^news_box\.(tournament|tutorial|news|warning|firefox_warning)$/,

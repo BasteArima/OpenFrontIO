@@ -397,6 +397,10 @@ export default defineConfig(({ mode }) => {
       "process.env.API_DOMAIN": JSON.stringify(
         mode === "test" ? "" : (env.API_DOMAIN ?? ""),
       ),
+      // Self-hosted build (src/core/SelfHost.ts). Off under vitest.
+      "process.env.SELFHOST": JSON.stringify(
+        mode === "test" ? "" : (env.SELFHOST ?? ""),
+      ),
       // Add other process.env variables if needed, OR migrate code to import.meta.env
     },
 
@@ -446,6 +450,13 @@ export default defineConfig(({ mode }) => {
         },
         // API proxies
         "/api": {
+          target: "http://localhost:3000",
+          changeOrigin: true,
+          secure: false,
+        },
+        // Self-hosted account API stand-in (cosmetics catalog); point the
+        // client at it with localStorage.apiHost = "http://localhost:9000/_api".
+        "/_api": {
           target: "http://localhost:3000",
           changeOrigin: true,
           secure: false,

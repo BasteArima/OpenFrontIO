@@ -714,11 +714,47 @@
     "veryfast": "Очень быстро"
   },
   "effects": {
+    "boat_dna": "Корабль: ДНК",
+    "boat_fire": "Корабль: Огонь",
+    "boat_ice": "Корабль: Лёд",
+    "boat_police": "Корабль: Мигалка",
+    "boat_rainbow": "Корабль: Радуга",
+    "boat_toxic": "Корабль: Токсик",
+    "city_gold": "Постройки: Золото",
+    "city_neon": "Постройки: Неон",
+    "city_rainbow": "Постройки: Радуга",
+    "fireworks_atom": "Атомная: Салют",
+    "fireworks_hydro": "Водородная: Салют",
+    "fireworks_mirvwarhead": "РГЧ: Салют",
+    "frost_atom": "Атомная: Мороз",
+    "frost_hydro": "Водородная: Мороз",
+    "frost_mirvwarhead": "РГЧ: Мороз",
+    "inferno_atom": "Атомная: Пекло",
+    "inferno_hydro": "Водородная: Пекло",
+    "inferno_mirvwarhead": "РГЧ: Пекло",
     "nukeType": {
       "atom": "Атомные бомбы",
       "hydro": "Водородные бомбы",
       "mirvWarhead": "РГЧ ИН"
     },
+    "nuke_dna": "Ракета: ДНК",
+    "nuke_fire": "Ракета: Огонь",
+    "nuke_ice": "Ракета: Лёд",
+    "nuke_police": "Ракета: Мигалка",
+    "nuke_rainbow": "Ракета: Радуга",
+    "nuke_toxic": "Ракета: Токсик",
+    "plasma_atom": "Атомная: Плазма",
+    "plasma_hydro": "Водородная: Плазма",
+    "plasma_mirvwarhead": "РГЧ: Плазма",
+    "rail_gold": "Рельсы: Золото",
+    "rail_neon": "Рельсы: Неон",
+    "rail_rainbow": "Рельсы: Радуга",
+    "ship_gold": "Линкор: Золото",
+    "ship_neon": "Линкор: Неон",
+    "ship_rainbow": "Линкор: Радуга",
+    "train_gold": "Поезд: Золото",
+    "train_neon": "Поезд: Неон",
+    "train_rainbow": "Поезд: Радуга",
     "type": {
       "nukeExplosion": "Взрывы ядерных ракет",
       "nukeTrail": "Следы ядерных ракет",
@@ -1405,7 +1441,6 @@
     "pluto": "Плутон",
     "qingchina": "Династия Цин",
     "random": "Случайно",
-    "random_reroll": "Нажмите ещё раз, чтобы перебросить",
     "russia": "Россия",
     "sanfrancisco": "Сан-Франциско",
     "scandinavia": "Скандинавия",
@@ -1437,6 +1472,9 @@
     "yangtzeriver": "Река Янцзы",
     "yellowsea": "Жёлтое море",
     "yenisei": "Енисей"
+  },
+  "map_picker": {
+    "random_reroll": "Нажмите ещё раз, чтобы перебросить"
   },
   "map_categories": {
     "africa": "Африка",
@@ -2028,8 +2066,45 @@
     "yellow": "Жёлтые"
   },
   "territory_patterns": {
+    "color_palette": {
+      "arctic": "Арктика",
+      "bastefront": "BasteFront",
+      "candy": "Конфета",
+      "desert": "Пустыня",
+      "ember": "Угли",
+      "forest": "Лес",
+      "gold": "Золото",
+      "graphite": "Графит",
+      "midnight": "Полночь",
+      "neon": "Неон",
+      "ocean": "Океан",
+      "royal": "Королевская",
+      "sakura": "Сакура",
+      "toxic": "Токсик",
+      "volcano": "Вулкан"
+    },
     "pattern": {
-      "default": "По умолчанию"
+      "argyle": "Ромбы",
+      "bands": "Широкие полосы",
+      "bricks": "Кирпичи",
+      "camo": "Камуфляж",
+      "checker": "Шахматка",
+      "default": "По умолчанию",
+      "diag_stripes": "Диагональ",
+      "grid": "Сетка",
+      "hearts": "Сердечки",
+      "honeycomb": "Соты",
+      "maze": "Лабиринт",
+      "parachutes": "Десант",
+      "pinstripes": "Тонкая полоска",
+      "plaid": "Клетка",
+      "polka": "Горошек",
+      "rings": "Кольца",
+      "skulls": "Черепа",
+      "speckle": "Крапинка",
+      "stars": "Звёзды",
+      "waves": "Волны",
+      "zigzag": "Зигзаг"
     },
     "select_skin": "Скин"
   },
@@ -2376,5 +2451,15 @@
     "you_won": "Вы победили!",
     "your_team": "Ваша команда победила!",
     "youtube_tutorial": "Нужна помощь?"
+  },
+  "flags": {
+    "bastefront": "BasteFront",
+    "checkered": "Финиш",
+    "night_sky": "Ночное небо",
+    "ocean_wave": "Большая волна",
+    "pirate": "Весёлый Роджер",
+    "radioactive": "Радиация",
+    "rainbow": "Радуга",
+    "toxic_green": "Токсичное болото"
   }
 }

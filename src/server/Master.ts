@@ -25,6 +25,7 @@ import { MasterLobbyService } from "./MasterLobbyService";
 import { setNoStoreHeaders } from "./NoStoreHeaders";
 import { startPolling } from "./PollingLoop";
 import { renderAppShell } from "./RenderHtml";
+import { readSelfHostCatalogText } from "./SelfHostCosmetics";
 import { ServerEnv } from "./ServerEnv";
 import { applyStaticAssetCacheControl } from "./StaticAssetCache";
 
@@ -290,6 +291,17 @@ app.get("/api/health", (_req, res) => {
 // API_DOMAIN=<this host>/_api get an immediate 404 here, which the server-list
 // heartbeat counts as a reachable backend with no list (so multiplayer stays
 // enabled) and every other API call treats as "nothing there".
+app.get("/_api/cosmetics.json", (_req, res) => {
+  try {
+    res.type("application/json").send(readSelfHostCatalogText());
+  } catch (error) {
+    log.error("Error reading the self-host cosmetics catalog:", error);
+    res.status(404).json({ error: "no cosmetics catalog" });
+  }
+});
+app.get("/_api/reserved_clan_tags", (_req, res) => {
+  res.json([]);
+});
 app.use("/_api", (_req, res) => {
   res.status(404).json({ error: "no account API on this server" });
 });

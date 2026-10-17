@@ -21,6 +21,7 @@ import {
   MIN_HOSTED_LOBBY_AUTO_START_MS,
   ServerErrorMessage,
 } from "../core/Schemas";
+import { SELFHOST_FLARES, selfHostEnabled } from "../core/SelfHost";
 import { generateID, replacer } from "../core/Util";
 import { CreateGameInputSchema } from "../core/WorkerSchemas";
 import { decodeClientMessage, encodeServerMessage } from "../core/ZbinWire";
@@ -40,6 +41,7 @@ import { MapPlaylist } from "./MapPlaylist";
 import { setNoStoreHeaders } from "./NoStoreHeaders";
 import { PrivilegeRefresher } from "./PrivilegeRefresher";
 import { startRankedCheckinLoops } from "./RankedCheckin";
+import { SelfHostPrivileges } from "./SelfHostCosmetics";
 import { ServerEnv } from "./ServerEnv";
 import { SingleplayerPresence } from "./SingleplayerPresence";
 import { applyStaticAssetCacheControl } from "./StaticAssetCache";
@@ -104,13 +106,18 @@ export async function startWorker() {
     initWorkerMetrics(gm, lobbyService, singleplayerPresence);
   }
 
-  const privilegeRefresher = new PrivilegeRefresher(
-    ServerEnv.jwtIssuer() + "/cosmetics.json",
-    ServerEnv.apiKey(),
-    ServerEnv.jwtIssuer() + "/reserved_clan_tags",
-    log,
-  );
-  privilegeRefresher.start();
+  // Self-hosted: cosmetics come from the local catalog, not the account API.
+  const privilegeRefresher = selfHostEnabled()
+    ? new SelfHostPrivileges()
+    : new PrivilegeRefresher(
+        ServerEnv.jwtIssuer() + "/cosmetics.json",
+        ServerEnv.apiKey(),
+        ServerEnv.jwtIssuer() + "/reserved_clan_tags",
+        log,
+      );
+  if (privilegeRefresher instanceof PrivilegeRefresher) {
+    privilegeRefresher.start();
+  }
 
   // Ahead of everything that can reject a request — the worker-prefix check
   // below and the rate limiter further down — so that a 404 or a 429 still
@@ -681,6 +688,10 @@ export async function startWorker() {
           | undefined;
 
         const allowedFlares = ServerEnv.allowedFlares();
+        if (claims === null && selfHostEnabled()) {
+          // No accounts on a self-hosted server: everyone owns everything.
+          flares = [...SELFHOST_FLARES];
+        }
         if (claims === null) {
           if (allowedFlares !== undefined) {
             log.warn("Unauthorized: Anonymous user attempted to join game");

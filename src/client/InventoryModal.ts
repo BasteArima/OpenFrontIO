@@ -21,6 +21,7 @@ import {
   UserSettings,
 } from "../core/game/UserSettings";
 import { PlayerPattern } from "../core/Schemas";
+import { selfHostEnabled } from "../core/SelfHost";
 import { getUserMe } from "./Api";
 import { userAuth } from "./Auth";
 import "./components/baseComponents/Button";
@@ -624,23 +625,25 @@ export class InventoryModal extends BaseModal {
           title: translateText("inventory.title"),
           onBack: () => this.close(),
           ariaLabel: translateText("common.back"),
-          rightContent: html`<o-button
-            data-inventory-header-action
-            class="no-crazygames"
-            variant=${isLoggedIn ? "primary" : "danger"}
-            size="sm"
-            .translationKey=${isLoggedIn
-              ? "main.store"
-              : "common.not_logged_in"}
-            @click=${() => {
-              if (isLoggedIn) {
-                this.close();
-                window.location.hash = "modal=store&tab=cosmetics";
-              } else {
-                window.showPage?.("page-account");
-              }
-            }}
-          ></o-button>`,
+          rightContent: selfHostEnabled()
+            ? undefined
+            : html`<o-button
+                data-inventory-header-action
+                class="no-crazygames"
+                variant=${isLoggedIn ? "primary" : "danger"}
+                size="sm"
+                .translationKey=${isLoggedIn
+                  ? "main.store"
+                  : "common.not_logged_in"}
+                @click=${() => {
+                  if (isLoggedIn) {
+                    this.close();
+                    window.location.hash = "modal=store&tab=cosmetics";
+                  } else {
+                    window.showPage?.("page-account");
+                  }
+                }}
+              ></o-button>`,
         })}
 
         <div class="md:flex items-center gap-2 justify-center mt-4">

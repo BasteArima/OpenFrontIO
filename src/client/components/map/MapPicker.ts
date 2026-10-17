@@ -115,7 +115,7 @@ export class MapPicker extends LitElement {
           ${translateText("map.random")}: ${name}
         </div>
         <div class="text-[10px] text-white/50 text-center leading-tight">
-          ${translateText("map.random_reroll")}
+          ${translateText("map_picker.random_reroll")}
         </div>
       </div>
     `;

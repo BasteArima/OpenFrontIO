@@ -719,11 +719,47 @@
     "veryfast": "Very Fast"
   },
   "effects": {
+    "boat_dna": "Boat: DNA",
+    "boat_fire": "Boat: Fire",
+    "boat_ice": "Boat: Ice",
+    "boat_police": "Boat: Siren",
+    "boat_rainbow": "Boat: Rainbow",
+    "boat_toxic": "Boat: Toxic",
+    "city_gold": "Buildings: Gold",
+    "city_neon": "Buildings: Neon",
+    "city_rainbow": "Buildings: Rainbow",
+    "fireworks_atom": "Atom: Fireworks",
+    "fireworks_hydro": "Hydrogen: Fireworks",
+    "fireworks_mirvwarhead": "MIRV: Fireworks",
+    "frost_atom": "Atom: Frost",
+    "frost_hydro": "Hydrogen: Frost",
+    "frost_mirvwarhead": "MIRV: Frost",
+    "inferno_atom": "Atom: Inferno",
+    "inferno_hydro": "Hydrogen: Inferno",
+    "inferno_mirvwarhead": "MIRV: Inferno",
     "nukeType": {
       "atom": "Atom",
       "hydro": "Hydrogen",
       "mirvWarhead": "MIRV"
     },
+    "nuke_dna": "Nuke: DNA",
+    "nuke_fire": "Nuke: Fire",
+    "nuke_ice": "Nuke: Ice",
+    "nuke_police": "Nuke: Siren",
+    "nuke_rainbow": "Nuke: Rainbow",
+    "nuke_toxic": "Nuke: Toxic",
+    "plasma_atom": "Atom: Plasma",
+    "plasma_hydro": "Hydrogen: Plasma",
+    "plasma_mirvwarhead": "MIRV: Plasma",
+    "rail_gold": "Railroad: Gold",
+    "rail_neon": "Railroad: Neon",
+    "rail_rainbow": "Railroad: Rainbow",
+    "ship_gold": "Warship: Gold",
+    "ship_neon": "Warship: Neon",
+    "ship_rainbow": "Warship: Rainbow",
+    "train_gold": "Train: Gold",
+    "train_neon": "Train: Neon",
+    "train_rainbow": "Train: Rainbow",
     "type": {
       "nukeExplosion": "Nuke Explosion",
       "nukeTrail": "Nuke Trail",
@@ -802,6 +838,16 @@
     "live": "LIVE",
     "minimize": "Minimize",
     "open_on_twitch": "Open {channel} on Twitch"
+  },
+  "flags": {
+    "bastefront": "BasteFront",
+    "checkered": "Checkered",
+    "night_sky": "Night Sky",
+    "ocean_wave": "Big Wave",
+    "pirate": "Jolly Roger",
+    "radioactive": "Radioactive",
+    "rainbow": "Rainbow",
+    "toxic_green": "Toxic Swamp"
   },
   "free_play": {
     "account": "Your account, stats, friends and cosmetics",
@@ -1435,7 +1481,6 @@
     "pulicatlake": "Pulicat Lake",
     "qingchina": "Qing China",
     "random": "Random",
-    "random_reroll": "Click again to reroll",
     "riodejaneiro": "Rio de Janeiro",
     "russia": "Russia",
     "sanfrancisco": "San Francisco",
@@ -1500,6 +1545,9 @@
   },
   "map_layers": {
     "label": "label"
+  },
+  "map_picker": {
+    "random_reroll": "Click again to reroll"
   },
   "marketing_consent": {
     "body": "News and updates by email. Change it anytime in your account.",
@@ -2064,8 +2112,45 @@
     "yellow": "Yellow"
   },
   "territory_patterns": {
+    "color_palette": {
+      "arctic": "Arctic",
+      "bastefront": "BasteFront",
+      "candy": "Candy",
+      "desert": "Desert",
+      "ember": "Ember",
+      "forest": "Forest",
+      "gold": "Gold",
+      "graphite": "Graphite",
+      "midnight": "Midnight",
+      "neon": "Neon",
+      "ocean": "Ocean",
+      "royal": "Royal",
+      "sakura": "Sakura",
+      "toxic": "Toxic",
+      "volcano": "Volcano"
+    },
     "pattern": {
-      "default": "Default"
+      "argyle": "Argyle",
+      "bands": "Bands",
+      "bricks": "Bricks",
+      "camo": "Camo",
+      "checker": "Checkerboard",
+      "default": "Default",
+      "diag_stripes": "Diagonal Stripes",
+      "grid": "Grid",
+      "hearts": "Hearts",
+      "honeycomb": "Honeycomb",
+      "maze": "Maze",
+      "parachutes": "Paratroopers",
+      "pinstripes": "Pinstripes",
+      "plaid": "Plaid",
+      "polka": "Polka Dots",
+      "rings": "Rings",
+      "skulls": "Skulls",
+      "speckle": "Speckle",
+      "stars": "Stars",
+      "waves": "Waves",
+      "zigzag": "Zigzag"
     },
     "select_skin": "Skin"
   },
