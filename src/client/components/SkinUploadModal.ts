@@ -81,8 +81,23 @@ export class SkinUploadModal extends LitElement {
   @state() private mine: UploadedItem[] = [];
   @state() private perOwner = 10;
 
+  // Rendered into <body>, not in place: the inventory's <o-modal> has a
+  // backdrop blur, which makes it the containing block of `position: fixed`
+  // and would clip this overlay to the inventory panel.
+  private readonly portal = document.createElement("div");
+
   createRenderRoot() {
-    return this;
+    return this.portal;
+  }
+
+  connectedCallback() {
+    document.body.appendChild(this.portal);
+    super.connectedCallback();
+  }
+
+  disconnectedCallback() {
+    super.disconnectedCallback();
+    this.portal.remove();
   }
 
   protected updated(changed: Map<string, unknown>): void {
@@ -170,7 +185,7 @@ export class SkinUploadModal extends LitElement {
         (this.displayMode === "country"
           ? COUNTRY_SIZE.initial
           : this.stampDefault());
-      this.querySelector("[data-upload-form]")?.scrollIntoView({
+      this.portal.querySelector("[data-upload-form]")?.scrollIntoView({
         block: "start",
       });
     } catch {
@@ -247,7 +262,7 @@ export class SkinUploadModal extends LitElement {
       this.image = null;
       this.fileName = "";
       this.itemTitle = "";
-      const input = this.querySelector<HTMLInputElement>(
+      const input = this.portal.querySelector<HTMLInputElement>(
         "input[data-upload-file]",
       );
       if (input) input.value = "";
